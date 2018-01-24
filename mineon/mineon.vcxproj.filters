@@ -3,8 +3,34 @@
   <ItemGroup>
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="mineon.cpp" />
+    <ClCompile Include="util\Sha2Utils.cpp">
+      <Filter>util</Filter>
+    </ClCompile>
+    <ClCompile Include="algorythm\Scrypt.cpp">
+      <Filter>algorythm</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="util\Sha2Utils.hpp">
+      <Filter>util</Filter>
+    </ClInclude>
+    <ClInclude Include="algorythm\Scrypt.hpp">
+      <Filter>algorythm</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="stratum">
+      <UniqueIdentifier>{d710f77d-6b99-435b-8938-c829ca5aadd8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="network">
+      <UniqueIdentifier>{f0e1a3da-6996-41af-b79a-bcff19a5cd44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="algorythm">
+      <UniqueIdentifier>{ef4fb677-3e36-411b-b477-2132552984a8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="util">
+      <UniqueIdentifier>{2631c7e1-091a-433c-a245-b3d391bf2fcb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>
