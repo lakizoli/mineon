@@ -1,0 +1,7 @@
+.vs/**
+**/*.user
+**/x64
+**/Debug
+**/Release
+mineon.VC.db
+mineon.VC.VC.opendb
