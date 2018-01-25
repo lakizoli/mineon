@@ -3,5 +3,6 @@
 **/x64
 **/Debug
 **/Release
+**/packages
 mineon.VC.db
 mineon.VC.VC.opendb

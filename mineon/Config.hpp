@@ -1,8 +1,28 @@
 #pragma once
 
 class Config {
+	bool mHasValidValues;
+
+	std::string mExeName;
+	std::string mAlgorythm;
+	std::string mUrl;
+	std::string mUser;
+	std::string mPassword;
+
+	uint32_t mThreads;
+	bool mBenchmark;
+	bool mShowVersion;
+	bool mShowHelp;
+
+	enum class OptionKinds {
+		None,
+		ShortOption,
+		LongOption
+	};
 
 	Config ();
+	static OptionKinds IsOption (const std::string& option, const std::string& shortOption, const std::string& longOption = "", bool checkLongStartOnly = false);
+	static std::string ParseOption (int32_t argc, char* argv[], int32_t& argIndex, OptionKinds optKind, bool hasValue);
 
 //Construction
 public:
@@ -10,6 +30,42 @@ public:
 
 //Interface
 public:
-	bool IsValid () const;
+	bool IsValid () const {
+		return mHasValidValues && !mExeName.empty () && !mAlgorythm.empty () && !mUrl.empty () && !mUser.empty ();
+	}
+
+	void ShowVersion ();
 	void ShowUsage () const;
+
+	const std::string& GetAlgorythmID () const {
+		return mAlgorythm;
+	}
+
+	const std::string& GetUrl () const {
+		return mUrl;
+	}
+
+	const std::string& GetUser () const {
+		return mUser;
+	}
+
+	const std::string& GetPassword () const {
+		return mPassword;
+	}
+
+	uint32_t GetThreads () const {
+		return mThreads;
+	}
+
+	bool IsBenchmark () const {
+		return mBenchmark;
+	}
+
+	bool NeedShowVersion () const {
+		return mShowVersion;
+	}
+
+	bool NeedShowHelp () const {
+		return mShowHelp;
+	}
 };
