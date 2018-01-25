@@ -1,14 +1,18 @@
 #include "stdafx.h"
 #include "Scrypt.hpp"
 
-Algorythm::PrepareResults Scrypt::Prepare (uint32_t nonceStart, uint32_t nonceCount) {
+bool Scrypt::Prepare (const Job& job, uint32_t nonceStart, uint32_t nonceCount) {
 	//TODO: ...
-	return PrepareResults::Error;
+;	return false;
 }
 
 Algorythm::ScanResults Scrypt::Scan () {
 	//TODO: ...
 	return ScanResults ();
+}
+
+void Scrypt::BreakScan () {
+	//TODO: ...
 }
 
 #ifdef UNUSED_CODE

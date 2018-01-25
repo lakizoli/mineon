@@ -13,6 +13,8 @@
       <Filter>algorythm</Filter>
     </ClCompile>
     <ClCompile Include="Config.cpp" />
+    <ClCompile Include="Workshop.cpp" />
+    <ClCompile Include="Job.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -26,6 +28,8 @@
       <Filter>algorythm</Filter>
     </ClInclude>
     <ClInclude Include="Config.hpp" />
+    <ClInclude Include="Workshop.hpp" />
+    <ClInclude Include="Job.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="network">

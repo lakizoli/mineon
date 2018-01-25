@@ -1,5 +1,7 @@
 #pragma once
 
+class Job;
+
 class Algorythm {
 //Construction interface
 public:
@@ -15,13 +17,6 @@ public:
 
 //Algorythm interface
 public:
-	enum class PrepareResults {
-		Unknown, ///< Unknown result.
-		Error, ///< Error occured during prepare.
-		HaveMore, ///< We have one more input block to prepare, because of parallel execution.
-		Succeeded, ///< Prepare process succeeded.
-	};
-
 	struct ScanResults {
 		//result
 		bool foundNonce; ///< Flag to sign if the nonce value has been found.
@@ -46,10 +41,15 @@ public:
 	/**
 	* Prepare the algorithm calculation for the given nonce range.
 	*/
-	virtual PrepareResults Prepare (uint32_t nonceStart, uint32_t nonceCount) = 0;
+	virtual bool Prepare (const Job& job, uint32_t nonceStart, uint32_t nonceCount) = 0;
 
 	/**
 	* Scan for the nonce in the prepared nonce range.
 	*/
 	virtual ScanResults Scan () = 0;
+
+	/**
+	* Break the scanning process.
+	*/
+	virtual void BreakScan () = 0;
 };

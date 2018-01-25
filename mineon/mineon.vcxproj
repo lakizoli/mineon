@@ -155,13 +155,16 @@
     <ClInclude Include="algorythm\Algorythm.hpp" />
     <ClInclude Include="algorythm\Scrypt.hpp" />
     <ClInclude Include="Config.hpp" />
+    <ClInclude Include="Job.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="util\Sha2Utils.hpp" />
+    <ClInclude Include="Workshop.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="algorythm\Algorythm.cpp" />
     <ClCompile Include="algorythm\Scrypt.cpp" />
     <ClCompile Include="Config.cpp" />
+    <ClCompile Include="Job.cpp" />
     <ClCompile Include="mineon.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -170,6 +173,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="util\Sha2Utils.cpp" />
+    <ClCompile Include="Workshop.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
