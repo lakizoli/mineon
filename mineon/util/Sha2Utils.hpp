@@ -1,6 +1,8 @@
 #pragma once
 
 class Sha2Utils {
+	static const uint32_t sha256_k[64];
+
 public:
 	static void Sha256InitAvx2 () {
 		_mm256_setr_epi32 (
@@ -13,5 +15,5 @@ public:
 	* SHA256 block compression function (using AVX2 intrinsics).
 	* The 256-bit state is transformed via the 512-bit input block to produce a new state.
 	*/
-	static void Sha256TransformAvx2 (__m256i state[1], const __m256i block[2], int32_t swap);
+	static void Sha256TransformAvx2 (__m256i state[1], const __m256i block[2], bool swap);
 };

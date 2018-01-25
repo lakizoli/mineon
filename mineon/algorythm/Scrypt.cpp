@@ -1,6 +1,16 @@
 #include "stdafx.h"
 #include "Scrypt.hpp"
 
+Algorythm::PrepareResults Scrypt::Prepare (uint32_t nonceStart, uint32_t nonceCount) {
+	//TODO: ...
+	return PrepareResults::Error;
+}
+
+Algorythm::ScanResults Scrypt::Scan () {
+	//TODO: ...
+	return ScanResults ();
+}
+
 #ifdef UNUSED_CODE
 
 #define _CRT_SECURE_NO_WARNINGS

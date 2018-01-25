@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "Sha2Utils.hpp"
 
-static const uint32_t sha256_k[64] = {
+const uint32_t Sha2Utils::sha256_k[64] = {
 	0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
 	0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
 	0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
@@ -50,7 +50,7 @@ static const uint32_t sha256_k[64] = {
 * SHA256 block compression function.  The 256-bit state is transformed via
 * the 512-bit input block to produce a new state.
 */
-void Sha2Utils::Sha256TransformAvx2 (__m256i state[1], const __m256i block[2], int32_t swap) {
+void Sha2Utils::Sha256TransformAvx2 (__m256i state[1], const __m256i block[2], bool swap) {
 	__declspec (align (32)) uint32_t W[64];
 	__declspec (align (32)) uint32_t S[8];
 	uint32_t t0, t1;

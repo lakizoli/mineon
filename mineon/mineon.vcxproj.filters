@@ -9,6 +9,10 @@
     <ClCompile Include="algorythm\Scrypt.cpp">
       <Filter>algorythm</Filter>
     </ClCompile>
+    <ClCompile Include="algorythm\Algorythm.cpp">
+      <Filter>algorythm</Filter>
+    </ClCompile>
+    <ClCompile Include="Config.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -18,11 +22,12 @@
     <ClInclude Include="algorythm\Scrypt.hpp">
       <Filter>algorythm</Filter>
     </ClInclude>
+    <ClInclude Include="algorythm\Algorythm.hpp">
+      <Filter>algorythm</Filter>
+    </ClInclude>
+    <ClInclude Include="Config.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="stratum">
-      <UniqueIdentifier>{d710f77d-6b99-435b-8938-c829ca5aadd8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="network">
       <UniqueIdentifier>{f0e1a3da-6996-41af-b79a-bcff19a5cd44}</UniqueIdentifier>
     </Filter>
