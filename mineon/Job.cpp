@@ -5,7 +5,9 @@ static uint32_t swab32 (uint32_t val) {
 	return _byteswap_ulong (val);
 }
 
-Job::Job () {
+Job::Job () :
+	jobID (1)
+{
 	//Allocate job
 	data.resize (32);
 	target.resize (8);

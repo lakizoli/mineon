@@ -2,9 +2,9 @@
 #include "Workshop.hpp"
 
 class Network {
+protected:
 	Workshop& mWorkshop;
 
-protected:
 	explicit Network (Workshop& workshop);
 
 public:

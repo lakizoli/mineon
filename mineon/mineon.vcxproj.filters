@@ -21,6 +21,7 @@
     <ClCompile Include="network\Benchmark.cpp">
       <Filter>network</Filter>
     </ClCompile>
+    <ClCompile Include="Statistic.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -42,6 +43,7 @@
     <ClInclude Include="network\Benchmark.hpp">
       <Filter>network</Filter>
     </ClInclude>
+    <ClInclude Include="Statistic.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="network">

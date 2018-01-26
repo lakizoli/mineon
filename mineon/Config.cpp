@@ -46,8 +46,16 @@ std::string Config::ParseOption (int32_t argc, char* argv[], int32_t& argIndex, 
 		return "true";
 	}
 	case OptionKinds::LongOption: {
-		//TODO: ...
-		break;
+		if (hasValue) {
+			std::string value = argv[argIndex];
+			size_t posEq = value.find ('=');
+			if (posEq != std::string::npos && value.length() > posEq + 1) {
+				return value.substr (posEq + 1);
+			}
+		}
+
+		//Only boolean options have short form without value
+		return "true";
 	}
 	default:
 		break;

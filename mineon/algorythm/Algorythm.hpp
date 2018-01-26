@@ -1,5 +1,6 @@
 #pragma once
 
+class Statistic;
 struct Job;
 
 class Algorythm {
@@ -48,7 +49,7 @@ public:
 	/**
 	* Scan for the nonce in the prepared nonce range.
 	*/
-	virtual ScanResults Scan () = 0;
+	virtual ScanResults Scan (uint32_t threadIndex, Statistic& statistic) = 0;
 
 	/**
 	* Break the scanning process.

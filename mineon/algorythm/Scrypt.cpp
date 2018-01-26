@@ -2,6 +2,7 @@
 #include "Scrypt.hpp"
 #include "Sha2Utils.hpp"
 #include "Job.hpp"
+#include "Statistic.hpp"
 
 //scrypt (1024x, 512bit) algorithm implementation
 
@@ -361,8 +362,10 @@ bool Scrypt::FullTestHash (const uint32_t hash[8]) const {
 
 Scrypt::Scrypt () :
 	mBreakScan (false),
+	mJobID (0),
 	mStartNonce (0),
-	mNonceCount (0)
+	mEndNonce (0),
+	mNonce (0)
 {
 }
 
@@ -400,27 +403,35 @@ void Scrypt::operator delete [] (void* ptr, std::size_t size) {
 
 bool Scrypt::Prepare (const Job& job, uint32_t nonceStart, uint32_t nonceCount) {
 	mBreakScan = false;
-	mStartNonce = nonceStart;
-	mNonceCount = nonceCount;
-	mNonce = mStartNonce;
 
-	memcpy (mTarget, &job.target[0], 8 * sizeof (uint32_t));
+	if (mJobID != job.jobID) { //New job arrived
+		mJobID = job.jobID;
+		mStartNonce = nonceStart;
+		mEndNonce = nonceStart + nonceCount;
+		mNonce = mStartNonce;
 
-	uint32_t initIndex = SCRYPT_THREAD_COUNT;
-	while (initIndex--) {
-		memcpy (mData + initIndex * 20, &job.data[0], 20 * sizeof (uint32_t));
+		memcpy (mTarget, &job.target[0], 8 * sizeof (uint32_t));
+
+		uint32_t initIndex = SCRYPT_THREAD_COUNT;
+		while (initIndex--) {
+			memcpy (mData + initIndex * 20, &job.data[0], 20 * sizeof (uint32_t));
+		}
+
+		__m256i* midState = (__m256i*) mMidState;
+		*midState = Sha2Utils::Sha256InitAvx2 ();
+		Sha2Utils::Sha256TransformAvx2 ((__m256i*) mMidState, (__m256i*)mData, false);
+	} else { //Continue the current job
+		mStartNonce = mNonce;
 	}
-
-	__m256i* midState = (__m256i*) mMidState;
-	*midState = Sha2Utils::Sha256InitAvx2 ();
-	Sha2Utils::Sha256TransformAvx2 ((__m256i*) mMidState, (__m256i*)mData, false);
 
 	return true;
 }
 
-Algorythm::ScanResults Scrypt::Scan () {
+Algorythm::ScanResults Scrypt::Scan (uint32_t threadIndex, Statistic& statistic) {
 	ScanResults result;
 	result.scanStart = std::chrono::system_clock::now ();
+
+	statistic.ScanStarted (threadIndex, result.scanStart, mNonce, mEndNonce);
 
 	do {
 		uint32_t initIndex = SCRYPT_THREAD_COUNT;
@@ -430,17 +441,23 @@ Algorythm::ScanResults Scrypt::Scan () {
 
 		sp_scrypt_1024_1_1_256 (mData, mHash, *(const __m256i*) mMidState);
 
+		statistic.ScanStepEnded (threadIndex, mNonce);
+
 		initIndex = SCRYPT_THREAD_COUNT;
 		while (!result.foundNonce && initIndex--) {
 			if (mHash[initIndex * 8 + 7] <= mTarget[7] && FullTestHash (&mHash[initIndex * 8])) {
 				result.foundNonce = true;
 				result.nonce = mData[initIndex * 20 + 19];
+				break;
 			}
 		}
-	} while (mNonce - mStartNonce < mNonceCount && !result.foundNonce && !mBreakScan);
+	} while (mNonce < mEndNonce && !result.foundNonce && !mBreakScan);
 
 	result.hashesScanned = mNonce - mStartNonce;
 	result.scanDuration = std::chrono::system_clock::now () - result.scanStart;
+
+	statistic.ScanEnded (threadIndex, result.scanDuration, result.hashesScanned, result.foundNonce, result.nonce);
+
 	return result;
 }
 
