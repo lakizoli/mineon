@@ -46,6 +46,7 @@ std::string Config::ParseOption (int32_t argc, char* argv[], int32_t& argIndex, 
 		return "true";
 	}
 	case OptionKinds::LongOption: {
+		//TODO: ...
 		break;
 	}
 	default:
@@ -88,10 +89,21 @@ std::shared_ptr<Config> Config::ParseCommandLine (int32_t argc, char* argv[]) {
 					cfg->mHasValidValues = false;
 				}
 			} else if ((optKind = IsOption (opt, "-o", "--url=", true)) != OptionKinds::None) {
-				cfg->mUrl = ParseOption (argc, argv, i, optKind, true);
+				std::string urlWithProtocol = ParseOption (argc, argv, i, optKind, true);
+				size_t posSeparator = urlWithProtocol.find ('+');
+				if (posSeparator != std::string::npos) {
+					cfg->mNetworkProtocol = urlWithProtocol.substr (0, posSeparator);
+					if (urlWithProtocol.length () > posSeparator + 1) {
+						cfg->mUrl = urlWithProtocol.substr (posSeparator + 1);
+					}
+				}
 
 				//Check value
 				if (cfg->mUrl.empty ()) {
+					cfg->mHasValidValues = false;
+				}
+
+				if (cfg->mNetworkProtocol.empty ()) {
 					cfg->mHasValidValues = false;
 				}
 			} else if ((optKind = IsOption (opt, "-O", "--userpass=", true)) != OptionKinds::None) {
@@ -147,7 +159,8 @@ void Config::ShowUsage () const {
 		"Options:" << std::endl <<
 		"  -a, --algo=ALGO       specify the algorithm to use" << std::endl <<
 		"                          scrypt    scrypt(1024, 1, 1) (default)" << std::endl <<
-		"  -o, --url=URL         URL of mining server" << std::endl <<
+		"  -o, --url=URL         URL of mining server with network protocol definition" << std::endl <<
+		"                          stratum -> stratum+tcp://<host>:<port>" << std::endl <<
 		"  -O, --userpass=U:P    username:password pair for mining server" << std::endl <<
 		"  -u, --user=USERNAME   username for mining server" << std::endl <<
 		"  -p, --pass=PASSWORD   password for mining server" << std::endl <<

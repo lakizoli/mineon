@@ -156,6 +156,8 @@
     <ClInclude Include="algorythm\Scrypt.hpp" />
     <ClInclude Include="Config.hpp" />
     <ClInclude Include="Job.hpp" />
+    <ClInclude Include="network\Benchmark.hpp" />
+    <ClInclude Include="network\Network.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="util\Sha2Utils.hpp" />
     <ClInclude Include="Workshop.hpp" />
@@ -166,6 +168,8 @@
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="Job.cpp" />
     <ClCompile Include="mineon.cpp" />
+    <ClCompile Include="network\Benchmark.cpp" />
+    <ClCompile Include="network\Network.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

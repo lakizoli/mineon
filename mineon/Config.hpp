@@ -5,6 +5,7 @@ class Config {
 
 	std::string mExeName;
 	std::string mAlgorythm;
+	std::string mNetworkProtocol;
 	std::string mUrl;
 	std::string mUser;
 	std::string mPassword;
@@ -31,7 +32,7 @@ public:
 //Interface
 public:
 	bool IsValid () const {
-		return mHasValidValues && !mExeName.empty () && !mAlgorythm.empty () && !mUrl.empty () && !mUser.empty ();
+		return mHasValidValues && !mExeName.empty () && !mAlgorythm.empty () && !mNetworkProtocol.empty () && !mUrl.empty () && !mUser.empty ();
 	}
 
 	void ShowVersion ();
@@ -39,6 +40,10 @@ public:
 
 	const std::string& GetAlgorythmID () const {
 		return mAlgorythm;
+	}
+
+	const std::string& GetNetworkProtocol () const {
+		return mNetworkProtocol;
 	}
 
 	const std::string& GetUrl () const {

@@ -11,10 +11,21 @@ std::vector<Algorythm::AlgorythmInfo> Algorythm::GetAvailableAlgorythms () {
 		algos.push_back ({ algo.GetAlgorythmID (), algo.GetDescription () });
 	}
 
+	//...
+
 	return algos;
 }
 
-std::shared_ptr<Algorythm> Algorythm::Create (std::string algorythm) {
-	//TODO: ...
+std::shared_ptr<Algorythm> Algorythm::Create (const std::string& algorythm) {
+	//Check scrypt algorythm
+	{
+		std::shared_ptr<Algorythm> algo (new Scrypt ());
+		if (algo->GetAlgorythmID () == algorythm) {
+			return algo;
+		}
+	}
+
+	//...
+
 	return nullptr;
 }

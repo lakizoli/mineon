@@ -15,6 +15,12 @@
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="Workshop.cpp" />
     <ClCompile Include="Job.cpp" />
+    <ClCompile Include="network\Network.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="network\Benchmark.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -30,6 +36,12 @@
     <ClInclude Include="Config.hpp" />
     <ClInclude Include="Workshop.hpp" />
     <ClInclude Include="Job.hpp" />
+    <ClInclude Include="network\Network.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="network\Benchmark.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="network">

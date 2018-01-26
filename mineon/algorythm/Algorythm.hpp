@@ -1,6 +1,6 @@
 #pragma once
 
-class Job;
+struct Job;
 
 class Algorythm {
 //Construction interface
@@ -13,7 +13,7 @@ public:
 	};
 
 	static std::vector<AlgorythmInfo> GetAvailableAlgorythms ();
-	static std::shared_ptr<Algorythm> Create (std::string algorythm);
+	static std::shared_ptr<Algorythm> Create (const std::string& algorythm);
 
 //Algorythm interface
 public:
@@ -26,6 +26,8 @@ public:
 		uint32_t hashesScanned; ///< The count of scanned hashes.
 		std::chrono::system_clock::time_point scanStart; ///< The start time of the scaning process.
 		std::chrono::system_clock::duration scanDuration; ///< The duration of the scaning process.
+
+		ScanResults () : foundNonce (false), nonce (0), hashesScanned (0) {}
 	};
 
 	/**
