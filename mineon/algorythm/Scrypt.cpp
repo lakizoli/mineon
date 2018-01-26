@@ -448,7 +448,6 @@ Algorythm::ScanResults Scrypt::Scan (uint32_t threadIndex, Statistic& statistic)
 			if (mHash[initIndex * 8 + 7] <= mTarget[7] && FullTestHash (&mHash[initIndex * 8])) {
 				result.foundNonce = true;
 				result.nonce = mData[initIndex * 20 + 19];
-				break;
 			}
 		}
 	} while (mNonce < mEndNonce && !result.foundNonce && !mBreakScan);
