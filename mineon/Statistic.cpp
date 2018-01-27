@@ -26,3 +26,9 @@ void Statistic::ScanEnded (uint32_t threadIndex, std::chrono::system_clock::dura
 		", found: " << (foundNonce ? "true" : "false") <<
 		", nonce: " << nonce << ")" << std::endl;
 }
+
+void Statistic::Error (const std::string& error) {
+}
+
+void Statistic::Message (const std::string& msg) {
+}

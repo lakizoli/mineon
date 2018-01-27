@@ -9,6 +9,7 @@ Config::Config () :
 	mShowVersion (false),
 	mShowHelp (false)
 {
+	mUserAgent = "mineon 1.0.0";
 }
 
 Config::OptionKinds Config::IsOption (const std::string& option, const std::string& shortOption, const std::string& longOption, bool checkLongStartOnly) {
@@ -158,7 +159,7 @@ std::shared_ptr<Config> Config::ParseCommandLine (int32_t argc, char* argv[]) {
 }
 
 void Config::ShowVersion () {
-	std::cout << "mineon 1.0.0" << std::endl << std::endl;
+	std::cout << GetUserAgent () << std::endl << std::endl;
 }
 
 void Config::ShowUsage () const {

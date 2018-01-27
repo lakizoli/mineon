@@ -22,6 +22,15 @@
       <Filter>network</Filter>
     </ClCompile>
     <ClCompile Include="Statistic.cpp" />
+    <ClCompile Include="network\Stratum.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="network\CurlClient.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
+    <ClCompile Include="network\Json.cpp">
+      <Filter>network</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h" />
@@ -44,6 +53,15 @@
       <Filter>network</Filter>
     </ClInclude>
     <ClInclude Include="Statistic.hpp" />
+    <ClInclude Include="network\Stratum.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="network\CurlClient.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
+    <ClInclude Include="network\Json.hpp">
+      <Filter>network</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="network">

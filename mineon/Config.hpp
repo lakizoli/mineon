@@ -15,6 +15,8 @@ class Config {
 	bool mShowVersion;
 	bool mShowHelp;
 
+	std::string mUserAgent;
+
 	enum class OptionKinds {
 		None,
 		ShortOption,
@@ -33,6 +35,10 @@ public:
 public:
 	bool IsValid () const {
 		return mHasValidValues && !mExeName.empty () && !mAlgorythm.empty () && !mNetworkProtocol.empty () && !mUrl.empty () && !mUser.empty ();
+	}
+
+	const std::string& GetUserAgent () const {
+		return mUserAgent;
 	}
 
 	void ShowVersion ();

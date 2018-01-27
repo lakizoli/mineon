@@ -13,7 +13,7 @@ class Workshop {
 public:
 	Workshop ();
 
-	void SetJob (const Job& job);
+	void SetNewJob (const Job& job);
 	Job GetJob () const;
 	bool HasJob () const;
 

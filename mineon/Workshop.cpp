@@ -8,7 +8,7 @@ Workshop::Workshop () :
 {
 }
 
-void Workshop::SetJob (const Job& job) {
+void Workshop::SetNewJob (const Job& job) {
 	//Reset the current job
 	{
 		std::unique_lock<std::shared_mutex> lock (mSync);
