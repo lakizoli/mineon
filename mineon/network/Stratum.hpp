@@ -1,14 +1,11 @@
 #pragma once
 
 #include "Network.hpp"
-#include <curl/curl.h>
+#include "CurlClient.hpp"
 
 class Stratum : public Network {
 	std::string mUrl;
-	CURL* mCurl;
-	curl_socket_t mSocket;
-	std::vector<char> mCurlErrorBuffer;
-	std::vector<uint8_t> mSocketBuffer;
+	CurlClient mCurlClient;
 
 	std::string mSessionID;
 	std::vector<uint8_t> mExtraNonce;
