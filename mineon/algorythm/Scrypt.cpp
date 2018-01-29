@@ -362,7 +362,6 @@ bool Scrypt::FullTestHash (const uint32_t hash[8]) const {
 
 Scrypt::Scrypt () :
 	mBreakScan (false),
-	mJobID (0),
 	mStartNonce (0),
 	mEndNonce (0),
 	mNonce (0)

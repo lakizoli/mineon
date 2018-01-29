@@ -26,5 +26,8 @@ public:
 		return mCurl != nullptr;
 	}
 
-	std::shared_ptr<JSONObject> CallRPC (std::shared_ptr<JSONObject> req);
+	std::shared_ptr<JSONObject> CallJsonRPC (std::shared_ptr<JSONObject> req);
+	bool WaitNextMessage (uint32_t timeout);
+	std::shared_ptr<JSONObject> ReceiveJson ();
+	bool SendJson (std::shared_ptr<JSONObject> json) const;
 };

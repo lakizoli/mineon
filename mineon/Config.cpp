@@ -180,3 +180,7 @@ void Config::ShowUsage () const {
 		"  -h, --help            display this help text and exit" << std::endl <<
 		std::endl;
 }
+
+void Config::SetHostAndPort (const std::string& host, uint32_t port) {
+	//TODO: ...
+}

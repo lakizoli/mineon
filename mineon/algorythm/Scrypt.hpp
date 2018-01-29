@@ -7,7 +7,7 @@
 class Scrypt : public Algorythm {
 	std::atomic_bool mBreakScan;
 
-	uint32_t mJobID; ///< The id of the current job.
+	std::vector<uint8_t> mJobID; ///< The id of the current job.
 	uint32_t mStartNonce; ///< The start of the nonce range to scan.
 	uint32_t mEndNonce; ///< The end of the nonce range to scan (exclusive).
 	uint32_t mNonce; ///< The next available nonce value to test

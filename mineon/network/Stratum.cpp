@@ -31,6 +31,26 @@ bool Stratum::Subscribe () {
 
 	uint32_t tryCount = 2;
 	while (!succeeded && tryCount--) {
+		//Clear stratum values
+		mSessionID.clear ();
+		mExtraNonce.clear ();
+		mExtraNonce2Size = 0;
+
+		mDifficulty = 0.0;
+
+		mJobID.clear ();
+		mPrevHash.clear ();
+		mCoinBase.clear ();
+		mExtraNonce2Pos = 0;
+
+		mMerkleCount = 0;
+		mMerkleTree.clear ();
+
+		mVersion.clear ();
+		mNBits.clear ();
+		mNTime.clear ();
+		mClean = false;
+
 		//Compose request
 		std::shared_ptr<JSONObject> req = JSONObject::Create ();
 		req->Add ("id", 1);
@@ -47,7 +67,7 @@ bool Stratum::Subscribe () {
 		req->Add ("params", params);
 
 		//Execute call
-		std::shared_ptr<JSONObject> resp = mCurlClient.CallRPC (req);
+		std::shared_ptr<JSONObject> resp = mCurlClient.CallJsonRPC (req);
 		if (resp == nullptr) {
 			if (tryCount > 0) { //Retry
 				continue;
@@ -77,9 +97,6 @@ bool Stratum::Subscribe () {
 			return false;
 		}
 
-		mExtraNonce2Size = 0;
-		mExtraNonce.clear ();
-		mSessionID.clear ();
 		for (int32_t i = 0, iEnd = result->GetCount(); i < iEnd; ++i) {
 			if (result->HasArrayAtIndex(i)) { //Notify array
 				std::shared_ptr<JSONArray> arr = result->GetArrayAtIndex (i);
@@ -112,14 +129,211 @@ bool Stratum::Subscribe () {
 }
 
 bool Stratum::Authorize () {
-	//TODO: ...
+	//Compose request
+	std::shared_ptr<JSONObject> req = JSONObject::Create ();
+	req->Add ("id", 2);
+	req->Add ("method", "mining.authorize");
+
+	std::shared_ptr<JSONArray> params = JSONArray::Create ();
+	params->Add (mConfig->GetUser ());
+	params->Add (mConfig->GetPassword ());
+	req->Add ("params", params);
+
+	//Execute call
+	std::shared_ptr<JSONObject> resp = mCurlClient.CallJsonRPC (req);
+
+	//Handle all response
+	while (resp && HandleMethod (resp)) {
+		resp = mCurlClient.ReceiveJson ();
+	}
+
+	return true;
+}
+
+bool Stratum::HandleMethod (std::shared_ptr<JSONObject> json) {
+	std::string method = json->GetString ("method");
+	if (method.empty ()) {
+		return false;
+	}
+
+	if (method == "mining.notify") {
+		std::shared_ptr<JSONArray> params = json->GetArray ("params");
+		if (params && params->GetCount () >= 8) {
+			return HandleNotify (params);
+		}
+		return false;
+	} else if (method == "mining.set_difficulty") {
+		std::shared_ptr<JSONArray> params = json->GetArray ("params");
+		if (params && params->GetCount () >= 1) {
+			mDifficulty = params->GetDoubleAtIndex (0);
+			return true;
+		}
+	} else if (method == "client.reconnect") {
+		std::shared_ptr<JSONArray> params = json->GetArray ("params");
+		if (params && params->GetCount () >= 2) {
+			std::string host = params->GetStringAtIndex (0);
+			uint32_t port = 0;
+			if (params->HasStringAtIndex (1)) {
+				port = stoul (params->GetStringAtIndex (1));
+			} else if (params->HasUInt32AtIndex (1)) {
+				port = params->GetUInt32AtIndex (1);
+			}
+
+			if (port <= 0) {
+				return false;
+			}
+
+			mStatistic.Message ("Stratum: Server requested reconnection to host: " + host + " on port: " + std::to_string (port));
+			mConfig->SetHostAndPort (host, port);
+			Disconnect ();
+			return true;
+		}
+	} else if (method == "client.get_version") {
+		uint32_t id = json->GetUInt32 ("id");
+		if (id > 0) {
+			std::shared_ptr<JSONObject> req = JSONObject::Create ();
+			req->Add ("id", id);
+			req->AddNull ("error");
+			req->Add ("result", mConfig->GetUserAgent ());
+			return mCurlClient.SendJson (req);
+		}
+	} else if (method == "client.show_message") {
+		uint32_t id = json->GetUInt32 ("id");
+		std::shared_ptr<JSONArray> params = json->GetArray ("params");
+		if (id > 0 && params && params->GetCount () >= 1) {
+			std::string msg = params->GetStringAtIndex (0);
+			if (!msg.empty ()) {
+				mStatistic.Message ("Stratum: Message from server -> '" + msg + "'");
+			}
+
+			std::shared_ptr<JSONObject> req = JSONObject::Create ();
+			req->Add ("id", id);
+			req->AddNull ("error");
+			req->Add ("result", true);
+			return mCurlClient.SendJson (req);
+		}
+	}
+
 	return false;
+}
+
+bool Stratum::HandleNotify (std::shared_ptr<JSONArray> notifyParams) {
+	//Parse parameters
+	std::string jobID = notifyParams->GetStringAtIndex (0);
+	if (jobID.empty ()) {
+		return false;
+	}
+
+	std::string prevHash = notifyParams->GetStringAtIndex (1);
+	if (prevHash.length () != 64) {
+		return false;
+	}
+
+	std::string coinBase1 = notifyParams->GetStringAtIndex (2);
+	if (coinBase1.empty ()) {
+		return false;
+	}
+
+	std::string coinBase2 = notifyParams->GetStringAtIndex (3);
+	if (coinBase2.empty ()) {
+		return false;
+	}
+
+	std::shared_ptr<JSONArray> merkleArray = notifyParams->GetArrayAtIndex (4);
+	if (merkleArray == nullptr) {
+		return false;
+	}
+	mMerkleCount = merkleArray->GetCount ();
+
+	std::string version = notifyParams->GetStringAtIndex (5);
+	if (version.length () != 8) {
+		return false;
+	}
+
+	std::string nbits = notifyParams->GetStringAtIndex (6);
+	if (nbits.length () != 8) {
+		return false;
+	}
+
+	std::string ntime = notifyParams->GetStringAtIndex (7);
+	if (ntime.length () != 8) {
+		return false;
+	}
+
+	if (!notifyParams->HasBoolAtIndex (8)) {
+		return false;
+	}
+
+	mClean = notifyParams->GetBoolAtIndex (8);
+
+	//Convert job id
+	for (size_t i = 0, iEnd = jobID.length (); i < iEnd; i += 2) {
+		mJobID.push_back ((uint8_t) stoul (jobID.substr (i, 2), 0, 16));
+	}
+
+	//Convert merkle tree
+	for (uint32_t i = 0; i < mMerkleCount; ++i) {
+		std::string merkleItemValue = merkleArray->GetStringAtIndex (i);
+		if (merkleItemValue.length () != 64) {
+			return false;
+		}
+
+		std::vector<uint8_t> merkleItem;
+		for (size_t j = 0, jEnd = merkleItemValue.length (); j < jEnd; j += 2) {
+			merkleItem.push_back ((uint8_t) stoul (merkleItemValue.substr (j, 2), 0, 16));
+		}
+
+		mMerkleTree.push_back (merkleItem);
+	}
+
+	//Compose coinbase -> [coinbase1] + [xnonce1] + [xnonce2] + [coinbase2]
+	mExtraNonce2Pos = (uint32_t) (coinBase1.length () / 2 + mExtraNonce.size ());
+	for (size_t i = 0, iEnd = coinBase1.length (); i < iEnd; i += 2) {
+		mCoinBase.push_back ((uint8_t) stoul (coinBase1.substr (i, 2), 0, 16));
+	}
+	std::copy (mExtraNonce.begin (), mExtraNonce.end (), std::back_inserter (mCoinBase));
+	for (size_t i = 0; i < mExtraNonce2Size; ++i) {
+		mCoinBase.push_back (0);
+	}
+	for (size_t i = 0, iEnd = coinBase2.length (); i < iEnd; i += 2) {
+		mCoinBase.push_back ((uint8_t) stoul (coinBase2.substr (i, 2), 0, 16));
+	}
+
+	//Convert prevHash
+	for (size_t i = 0, iEnd = prevHash.length (); i < iEnd; i += 2) {
+		mPrevHash.push_back ((uint8_t) stoul (prevHash.substr (i, 2), 0, 16));
+	}
+
+	//Convert version
+	for (size_t i = 0, iEnd = version.length (); i < iEnd; i += 2) {
+		mVersion.push_back ((uint8_t) stoul (version.substr (i, 2), 0, 16));
+	}
+
+	//Convert nbits
+	for (size_t i = 0, iEnd = nbits.length (); i < iEnd; i += 2) {
+		mNBits.push_back ((uint8_t) stoul (nbits.substr (i, 2), 0, 16));
+	}
+
+	//Convert ntime
+	for (size_t i = 0, iEnd = ntime.length (); i < iEnd; i += 2) {
+		mNTime.push_back ((uint8_t) stoul (ntime.substr (i, 2), 0, 16));
+	}
+
+	return true;
+}
+
+void Stratum::GenerateJob () {
+	//TODO: ...
 }
 
 Stratum::Stratum (Statistic& statistic, Workshop& workshop, std::shared_ptr<Config> cfg) :
 	Network (statistic, workshop, cfg),
 	mCurlClient (statistic),
-	mExtraNonce2Size (0)
+	mExtraNonce2Size (0),
+	mDifficulty (0),
+	mExtraNonce2Pos (0),
+	mMerkleCount (0),
+	mClean (false)
 {
 }
 
@@ -136,16 +350,36 @@ void Stratum::Step () {
 		}
 	}
 
+	//Set the new job if any
+	bool newJobArrived = true;
+	if (mWorkshop.HasJob ()) {
+		Job job = mWorkshop.GetCurrentJob ();
+		newJobArrived = job.jobID != mJobID;
+	}
 
+	if (newJobArrived) {
+		GenerateJob ();
 
+		if (mClean) {
+			mStatistic.Message ("Stratum: Server requested work restart!");
+			//TODO: ... drop all waiting non submitted work (reset threads)
+		}
+	}
 
+	//Wait for server messages
+	if (!mCurlClient.WaitNextMessage (120)) {
+		Disconnect ();
+		mStatistic.Message ("Stratum: Connection timed out and interrupted!");
+		return;
+	}
 
+	std::shared_ptr<JSONObject> json = mCurlClient.ReceiveJson ();
 
+	//Handle all response
+	while (json && HandleMethod (json)) {
+		json = mCurlClient.ReceiveJson ();
+	}
 
-
-
-	//mWorkshop.SetNewJob (job);
-
-	//Wait for a little bit before reset
-	std::this_thread::sleep_for (std::chrono::seconds (30));
+	//Wait for a little bit before next cycle
+	std::this_thread::sleep_for (std::chrono::milliseconds (10));
 }

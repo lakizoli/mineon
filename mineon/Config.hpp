@@ -56,6 +56,8 @@ public:
 		return mUrl;
 	}
 
+	void SetHostAndPort (const std::string& host, uint32_t port);
+
 	const std::string& GetUser () const {
 		return mUser;
 	}

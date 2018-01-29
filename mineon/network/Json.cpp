@@ -117,6 +117,12 @@ JSONObject::JSONObject () {
 	mDocument->SetObject ();
 }
 
+void JSONObject::AddNull (const std::string& key) {
+	rapidjson::Value keyValue;
+	keyValue.SetString (key.c_str (), (rapidjson::SizeType) key.length (), mDocument->GetAllocator ());
+	mDocument->AddMember (keyValue, rapidjson::Value (rapidjson::kNullType), mDocument->GetAllocator ());
+}
+
 void JSONObject::Add (const std::string& key, const char* value) {
 	rapidjson::Value keyValue;
 	keyValue.SetString (key.c_str (), (rapidjson::SizeType) key.length (), mDocument->GetAllocator ());
@@ -238,27 +244,27 @@ bool JSONObject::GetBool (const string& key) const {
 
 int32_t JSONObject::GetInt32 (const string& key) const {
 	auto it = mDocument->FindMember (rapidjson::StringRef (key.c_str ()));
-	return it == mDocument->MemberEnd () ? false : it->value.GetInt ();
+	return it == mDocument->MemberEnd () ? 0l : it->value.GetInt ();
 }
 
 int64_t JSONObject::GetInt64 (const string& key) const {
 	auto it = mDocument->FindMember (rapidjson::StringRef (key.c_str ()));
-	return it == mDocument->MemberEnd () ? false : it->value.GetInt64 ();
+	return it == mDocument->MemberEnd () ? 0ll : it->value.GetInt64 ();
 }
 
 uint32_t JSONObject::GetUInt32 (const string& key) const {
 	auto it = mDocument->FindMember (rapidjson::StringRef (key.c_str ()));
-	return it == mDocument->MemberEnd () ? false : it->value.GetUint ();
+	return it == mDocument->MemberEnd () ? 0ul : it->value.GetUint ();
 }
 
 uint64_t JSONObject::GetUInt64 (const string& key) const {
 	auto it = mDocument->FindMember (rapidjson::StringRef (key.c_str ()));
-	return it == mDocument->MemberEnd () ? false : it->value.GetUint64 ();
+	return it == mDocument->MemberEnd () ? 0ull : it->value.GetUint64 ();
 }
 
 double JSONObject::GetDouble (const string& key) const {
 	auto it = mDocument->FindMember (rapidjson::StringRef (key.c_str ()));
-	return it == mDocument->MemberEnd () ? false : it->value.GetDouble ();
+	return it == mDocument->MemberEnd () ? 0.0 : it->value.GetDouble ();
 }
 
 shared_ptr<JSONObject> JSONObject::GetObj (const string& key) const {

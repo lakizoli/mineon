@@ -27,7 +27,7 @@ void Workshop::SetNewJob (const Job& job) {
 	}
 }
 
-Job Workshop::GetJob () const {
+Job Workshop::GetCurrentJob () const {
 	std::shared_lock<std::shared_mutex> lock (mSync);
 
 	return mJob;

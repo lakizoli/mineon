@@ -14,7 +14,7 @@ public:
 	Workshop ();
 
 	void SetNewJob (const Job& job);
-	Job GetJob () const;
+	Job GetCurrentJob () const;
 	bool HasJob () const;
 
 	uint32_t AddJobObserver (std::function<void ()> observer);

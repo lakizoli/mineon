@@ -67,6 +67,8 @@ public:
 	JSONObject& operator= (JSONObject&& src) = delete;
 
 public:
+	void AddNull (const std::string& key);
+
 	void Add (const std::string& key, const char* value);
 	void Add (const std::string& key, const std::string& value);
 	void Add (const std::string& key, bool value);

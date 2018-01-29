@@ -15,7 +15,7 @@ void Benchmark::Step () {
 	Job job;
 
 	//Fill benchmark data
-	job.jobID = 1;
+	job.jobID = { 1 };
 
 	memset (&job.data[0], 0x55, 19 * sizeof (uint32_t));
 	job.data[17] = swab32 ((uint32_t) time (nullptr));

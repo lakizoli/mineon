@@ -131,7 +131,7 @@ std::string CurlClient::ReceiveLine (CURL* curl, curl_socket_t socket, std::vect
 	}
 
 	std::string res (buffer.begin (), it);
-	buffer.erase (buffer.begin (), it);
+	buffer.erase (buffer.begin (), ++it); //++it for erase the newline char from end also!
 	return res;
 }
 
@@ -184,7 +184,6 @@ bool CurlClient::Connect (const std::string& url) {
 		return false;
 	}
 
-	//TODO: ...
 	return true;
 }
 
@@ -196,17 +195,9 @@ void CurlClient::Disconnect () {
 	}
 }
 
-std::shared_ptr<JSONObject> CurlClient::CallRPC (std::shared_ptr<JSONObject> req) {
-	//Get request
-	if (req == nullptr) {
-		return nullptr;
-	}
-
-	std::string data = req->ToString ();
-	data.push_back ('\n');
-
+std::shared_ptr<JSONObject> CurlClient::CallJsonRPC (std::shared_ptr<JSONObject> req) {
 	//Execute the JSON RPC call
-	if (!SendLine (mCurl, mSocket, data)) {
+	if (!SendJson (req)) {
 		return nullptr;
 	}
 
@@ -214,10 +205,31 @@ std::shared_ptr<JSONObject> CurlClient::CallRPC (std::shared_ptr<JSONObject> req
 		return nullptr;
 	}
 
+	return ReceiveJson ();
+}
+
+bool CurlClient::WaitNextMessage (uint32_t timeout) {
+	return SocketFull (mSocket, 120);
+}
+
+std::shared_ptr<JSONObject> CurlClient::ReceiveJson () {
 	std::string rline = ReceiveLine (mCurl, mSocket, mSocketBuffer);
 	if (rline.empty ()) {
 		return nullptr;
 	}
 
 	return JSONObject::Parse (rline);
+}
+
+bool CurlClient::SendJson (std::shared_ptr<JSONObject> json) const {
+	//Get data
+	if (json == nullptr) {
+		return false;
+	}
+
+	std::string data = json->ToString ();
+	data.push_back ('\n');
+
+	//Send json line to the server
+	return SendLine (mCurl, mSocket, data);
 }
