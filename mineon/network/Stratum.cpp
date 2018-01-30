@@ -219,12 +219,6 @@ bool Stratum::HandleMethod (std::shared_ptr<JSONObject> json) {
 
 bool Stratum::HandleNotify (std::shared_ptr<JSONArray> notifyParams) {
 	//Clear stratum values
-	mSessionID.clear ();
-	mExtraNonce.clear ();
-	mExtraNonce2Size = 0;
-
-	mDifficulty = 0.0;
-
 	mJobID.clear ();
 	mPrevHash.clear ();
 	mCoinBase.clear ();
@@ -360,11 +354,7 @@ void Stratum::SubmitJobResults () {
 		std::string nonce = ToHexString ((const uint8_t*) &value, sizeof (uint32_t));
 
 		std::string jobID = ToHexString (&result.jobID[0], result.jobID.size ());
-
-		std::string xNonce2;
-		if (result.xNonce2.size () > 0) {
-			xNonce2 = ToHexString (&result.xNonce2[0], result.xNonce2.size ());
-		}
+		std::string xNonce2 = ToHexString (&result.xNonce2[0], result.xNonce2.size ());
 
 		std::shared_ptr<JSONArray> params = JSONArray::Create ();
 		params->Add (mConfig->GetUser ());
