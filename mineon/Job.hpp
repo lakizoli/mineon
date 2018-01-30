@@ -11,3 +11,12 @@ struct Job {
 	*/
 	Job ();
 };
+
+struct JobResult {
+	std::vector<uint8_t> jobID;
+	std::vector<uint8_t> xNonce2;
+	uint32_t nTime;
+	uint32_t nonce;
+
+	JobResult ();
+};

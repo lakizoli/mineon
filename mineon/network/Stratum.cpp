@@ -218,6 +218,25 @@ bool Stratum::HandleMethod (std::shared_ptr<JSONObject> json) {
 }
 
 bool Stratum::HandleNotify (std::shared_ptr<JSONArray> notifyParams) {
+	//Clear stratum values
+	mSessionID.clear ();
+	mExtraNonce.clear ();
+	mExtraNonce2Size = 0;
+
+	mDifficulty = 0.0;
+
+	mJobID.clear ();
+	mPrevHash.clear ();
+	mCoinBase.clear ();
+	mExtraNonce2Pos = 0;
+
+	mMerkleTree.clear ();
+
+	mVersion.clear ();
+	mNBits.clear ();
+	mNTime.clear ();
+	mClean = false;
+
 	//Parse parameters
 	std::string jobID = notifyParams->GetStringAtIndex (0);
 	if (jobID.empty ()) {
@@ -321,6 +340,74 @@ bool Stratum::HandleNotify (std::shared_ptr<JSONArray> notifyParams) {
 	return true;
 }
 
+void Stratum::SubmitJobResults () {
+	std::vector<JobResult> results = mWorkshop.GetJobResults ();
+
+	for (const JobResult& result : results) {
+		bool succeeded = false;
+
+		//Compose request
+		std::shared_ptr<JSONObject> req = JSONObject::Create ();
+		req->Add ("id", 4);
+		req->Add ("method", "mining.submit");
+
+		uint32_t value = 0;
+		LittleEndianUInt32Encode ((uint8_t*) &value, result.nTime);
+		std::string nTime = ToHexString ((const uint8_t*) &value, sizeof (uint32_t));
+
+		value = 0;
+		LittleEndianUInt32Encode ((uint8_t*) &value, result.nonce);
+		std::string nonce = ToHexString ((const uint8_t*) &value, sizeof (uint32_t));
+
+		std::string jobID = ToHexString (&result.jobID[0], result.jobID.size ());
+
+		std::string xNonce2;
+		if (result.xNonce2.size () > 0) {
+			xNonce2 = ToHexString (&result.xNonce2[0], result.xNonce2.size ());
+		}
+
+		std::shared_ptr<JSONArray> params = JSONArray::Create ();
+		params->Add (mConfig->GetUser ());
+		params->Add (jobID);
+		params->Add (xNonce2);
+		params->Add (nTime);
+		params->Add (nonce);
+		req->Add ("params", params);
+
+		//Execute call
+		std::shared_ptr<JSONObject> resp = mCurlClient.CallJsonRPC (req);
+
+		//Handle response
+		succeeded = resp->HasBool ("result") && resp->GetBool ("result");
+		if (succeeded) {
+			mWorkshop.RemoveSubmittedJobResult (result.jobID);
+		} else { //Failed or rejected
+			mStatistic.Error ("Stratum: submitted work rejected!");
+
+			if (resp->HasObject ("error") && !resp->GetObj ("error")->IsEmpty ()) {
+				mStatistic.Error ("Stratum: reject error -> '" + resp->GetObj ("error")->ToString () + "'");
+			}
+		}
+	}
+}
+
+std::string Stratum::ToHexString (const uint8_t* value, size_t size) {
+	std::stringstream res;
+
+	for (size_t i = 0; i < size; ++i) {
+		res << std::hex << std::setw (2) << std::setfill ('0') << (uint32_t) value[i];
+	}
+
+	return res.str ();
+}
+
+void Stratum::LittleEndianUInt32Encode (uint8_t dest[4], uint32_t value) {
+	dest[0] = value & 0xff;
+	dest[1] = (value >> 8) & 0xff;
+	dest[2] = (value >> 16) & 0xff;
+	dest[3] = (value >> 24) & 0xff;
+}
+
 uint32_t Stratum::LittleEndianUInt32Decode (const uint8_t value[4]) {
 	return ((uint32_t) (value[0]) + ((uint32_t) (value[1]) << 8) + ((uint32_t) (value[2]) << 16) + ((uint32_t) (value[3]) << 24));
 }
@@ -420,9 +507,12 @@ void Stratum::Step () {
 
 		if (mClean) {
 			mStatistic.Message ("Stratum: Server requested work restart!");
-			//TODO: ... drop all waiting non submitted work (reset threads)
+			mWorkshop.ClearSubmittedJobResults ();
 		}
 	}
+
+	//Submit all waiting job
+	SubmitJobResults ();
 
 	//Wait for server messages
 	if (!mCurlClient.WaitNextMessage (120)) {
@@ -433,11 +523,8 @@ void Stratum::Step () {
 
 	std::shared_ptr<JSONObject> json = mCurlClient.ReceiveJson ();
 
-	//Handle all response
-	while (json && HandleMethod (json)) {
-		json = mCurlClient.ReceiveJson ();
+	//Handle response
+	if (json && HandleMethod (json)) {
+		//json = mCurlClient.ReceiveJson ();
 	}
-
-	//Wait for a little bit before next cycle
-	std::this_thread::sleep_for (std::chrono::milliseconds (10));
 }

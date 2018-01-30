@@ -118,7 +118,7 @@ std::string CurlClient::ReceiveLine (CURL* curl, curl_socket_t socket, std::vect
 					break;
 				}
 			} else {
-				std::copy (recv.begin (), recv.end (), std::back_inserter (buffer));
+				std::copy (recv.begin (), recv.begin () + n, std::back_inserter (buffer));
 			}
 
 			it = std::find (buffer.begin (), buffer.end (), '\n');

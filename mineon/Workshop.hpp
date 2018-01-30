@@ -8,7 +8,9 @@ class Workshop {
 	mutable std::shared_mutex mSync;
 	bool mHasJob;
 	Job mJob;
-	std::map<uint32_t, std::function<void ()>> mJobObservers;
+	std::map<uint32_t, std::function<void (const std::string& jobID)>> mJobObservers;
+
+	std::vector<JobResult> mSubmitJobs;
 
 public:
 	Workshop ();
@@ -17,6 +19,11 @@ public:
 	Job GetCurrentJob () const;
 	bool HasJob () const;
 
-	uint32_t AddJobObserver (std::function<void ()> observer);
+	void SubmitJobResult (const JobResult& result);
+	std::vector<JobResult> GetJobResults () const;
+	void RemoveSubmittedJobResult (const std::vector<uint8_t>& jobID);
+	void ClearSubmittedJobResults ();
+
+	uint32_t AddJobObserver (std::function<void (const std::string& jobID)> observer);
 	void RemoveJobObserver (uint32_t observerID);
 };

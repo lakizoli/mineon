@@ -21,6 +21,7 @@ public:
 	struct ScanResults {
 		//result
 		bool foundNonce; ///< Flag to sign if the nonce value has been found.
+		uint32_t nTime; ///< The found nTime value if any.
 		uint32_t nonce; ///< The found nonce value if any.
 
 		//statistics
@@ -28,7 +29,7 @@ public:
 		std::chrono::system_clock::time_point scanStart; ///< The start time of the scaning process.
 		std::chrono::system_clock::duration scanDuration; ///< The duration of the scaning process.
 
-		ScanResults () : foundNonce (false), nonce (0), hashesScanned (0) {}
+		ScanResults () : foundNonce (false), nTime (0), nonce (0), hashesScanned (0) {}
 	};
 
 	/**
