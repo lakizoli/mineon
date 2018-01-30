@@ -360,6 +360,23 @@ bool Scrypt::FullTestHash (const uint32_t hash[8]) const {
 	return resCode;
 }
 
+void Scrypt::DiffToTarget (double difficulty) {
+	double diff = difficulty / 65536.0;
+
+	int32_t k = 0;
+	for (k = 6; k > 0 && diff > 1.0; k--) {
+		diff /= 4294967296.0;
+	}
+	uint64_t m = (uint64_t) (4294901760.0 / diff);
+	if (m == 0 && k == 6) {
+		memset (&mTarget[0], 0xff, 8 * sizeof (uint32_t));
+	} else {
+		memset (&mTarget[0], 0, 8 * sizeof (uint32_t));
+		mTarget[k] = (uint32_t) m;
+		mTarget[k + 1] = (uint32_t) (m >> 32);
+	}
+}
+
 Scrypt::Scrypt () :
 	mBreakScan (false),
 	mStartNonce (0),
@@ -409,7 +426,7 @@ bool Scrypt::Prepare (const Job& job, uint32_t nonceStart, uint32_t nonceCount) 
 		mEndNonce = nonceStart + nonceCount;
 		mNonce = mStartNonce;
 
-		memcpy (mTarget, &job.target[0], 8 * sizeof (uint32_t));
+		DiffToTarget (job.difficulty);
 
 		uint32_t initIndex = SCRYPT_THREAD_COUNT;
 		while (initIndex--) {

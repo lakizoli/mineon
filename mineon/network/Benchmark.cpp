@@ -1,10 +1,6 @@
 #include "stdafx.h"
 #include "Benchmark.hpp"
 
-static uint32_t swab32 (uint32_t val) {
-	return _byteswap_ulong (val);
-}
-
 Benchmark::Benchmark (Statistic& statistic, Workshop& workshop, std::shared_ptr<Config> cfg) :
 	Network (statistic, workshop, cfg)
 {
@@ -18,12 +14,12 @@ void Benchmark::Step () {
 	job.jobID = { 1 };
 
 	memset (&job.data[0], 0x55, 19 * sizeof (uint32_t));
-	job.data[17] = swab32 ((uint32_t) time (nullptr));
+	job.data[17] = _byteswap_ulong ((uint32_t) time (nullptr)); //swab32 ==> _byteswap_ulong
 	memset (&job.data[19], 0x00, 13 * sizeof (uint32_t));
 	job.data[20] = 0x80000000;
 	job.data[31] = 0x00000280;
 
-	memset (&job.target[0], 0x00, 8 * sizeof (uint32_t));
+	job.difficulty = 0.0;
 
 	mWorkshop.SetNewJob (job);
 

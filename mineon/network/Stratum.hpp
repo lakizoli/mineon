@@ -19,7 +19,6 @@ class Stratum : public Network {
 	std::vector<uint8_t> mCoinBase;
 	uint32_t mExtraNonce2Pos;
 
-	uint32_t mMerkleCount;
 	std::vector<std::vector<uint8_t>> mMerkleTree;
 
 	std::vector<uint8_t> mVersion; //[4]
@@ -36,6 +35,9 @@ class Stratum : public Network {
 	bool HandleMethod (std::shared_ptr<JSONObject> json);
 	bool HandleNotify (std::shared_ptr<JSONArray> notifyParams);
 
+	static uint32_t LittleEndianUInt32Decode (const uint8_t value[4]);
+	static uint32_t BigEndianUInt32Decode (const uint8_t value[4]);
+	static void DiffToTarget (double diff, std::vector<uint32_t>& target);
 	void GenerateJob ();
 
 public:

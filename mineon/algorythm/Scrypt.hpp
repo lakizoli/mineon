@@ -18,6 +18,7 @@ class Scrypt : public Algorythm {
 	__declspec (align (32)) uint32_t mTarget[8];
 
 	bool FullTestHash (const uint32_t hash[8]) const;
+	void DiffToTarget (double diff);
 
 public:
 	Scrypt ();

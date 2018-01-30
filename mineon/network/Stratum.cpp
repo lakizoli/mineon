@@ -2,6 +2,7 @@
 #include "Stratum.hpp"
 #include "Json.hpp"
 #include "CurlClient.hpp"
+#include "Sha2Utils.hpp"
 
 bool Stratum::Connect (const std::string& url) {
 	//Comose stratum url
@@ -43,7 +44,6 @@ bool Stratum::Subscribe () {
 		mCoinBase.clear ();
 		mExtraNonce2Pos = 0;
 
-		mMerkleCount = 0;
 		mMerkleTree.clear ();
 
 		mVersion.clear ();
@@ -243,7 +243,6 @@ bool Stratum::HandleNotify (std::shared_ptr<JSONArray> notifyParams) {
 	if (merkleArray == nullptr) {
 		return false;
 	}
-	mMerkleCount = merkleArray->GetCount ();
 
 	std::string version = notifyParams->GetStringAtIndex (5);
 	if (version.length () != 8) {
@@ -272,7 +271,7 @@ bool Stratum::HandleNotify (std::shared_ptr<JSONArray> notifyParams) {
 	}
 
 	//Convert merkle tree
-	for (uint32_t i = 0; i < mMerkleCount; ++i) {
+	for (uint32_t i = 0, iEnd = merkleArray->GetCount (); i < iEnd; ++i) {
 		std::string merkleItemValue = merkleArray->GetStringAtIndex (i);
 		if (merkleItemValue.length () != 64) {
 			return false;
@@ -322,8 +321,68 @@ bool Stratum::HandleNotify (std::shared_ptr<JSONArray> notifyParams) {
 	return true;
 }
 
+uint32_t Stratum::LittleEndianUInt32Decode (const uint8_t value[4]) {
+	return ((uint32_t) (value[0]) + ((uint32_t) (value[1]) << 8) + ((uint32_t) (value[2]) << 16) + ((uint32_t) (value[3]) << 24));
+}
+
+uint32_t Stratum::BigEndianUInt32Decode (const uint8_t value[4]) {
+	return ((uint32_t) (value[3]) + ((uint32_t) (value[2]) << 8) + ((uint32_t) (value[1]) << 16) + ((uint32_t) (value[0]) << 24));
+}
+
+void Stratum::DiffToTarget (double diff, std::vector<uint32_t>& target) {
+	int32_t k = 0;
+	for (k = 6; k > 0 && diff > 1.0; k--) {
+		diff /= 4294967296.0;
+	}
+	uint64_t m = 4294901760.0 / diff;
+	if (m == 0 && k == 6) {
+		memset (&target[0], 0xff, 8 * sizeof (uint32_t));
+	} else {
+		memset (&target[0], 0, 8 * sizeof (uint32_t));
+		target[k] = (uint32_t) m;
+		target[k + 1] = (uint32_t) (m >> 32);
+	}
+}
+
 void Stratum::GenerateJob () {
-	//TODO: ...
+	//Init new job
+	Job job;
+	job.jobID = mJobID;
+
+	uint8_t* xNonce2Ptr = &mCoinBase[mExtraNonce2Pos];
+	job.xNonce2.assign (xNonce2Ptr, xNonce2Ptr + mExtraNonce2Size);
+
+	//Generate merkle root
+	std::vector<uint8_t> merkleRoot (64);
+	Sha2Utils::Sha256d (&merkleRoot[0], &mCoinBase[0], (int32_t) mCoinBase.size ());
+	for (size_t i = 0; i < mMerkleTree.size (); i++) {
+		const std::vector<uint8_t>& merkleTreeItem = mMerkleTree[i];
+		memcpy (&merkleRoot[0] + 32, &merkleTreeItem[0], 32);
+		Sha2Utils::Sha256d (&merkleRoot[0], &merkleRoot[0], 64);
+	}
+
+	//Increment extraNonce2
+	for (uint32_t i = 0; i < mExtraNonce2Size && !++xNonce2Ptr[i]; i++) {
+		//...Nothing to do...
+	}
+
+	//Assemble block header
+	job.data[0] = LittleEndianUInt32Decode (&mVersion[0]);
+	for (uint32_t i = 0; i < 8; i++) {
+		job.data[1 + i] = LittleEndianUInt32Decode (&mPrevHash[i * sizeof (uint32_t)]);
+	}
+	for (uint32_t i = 0; i < 8; i++) {
+		job.data[9 + i] = BigEndianUInt32Decode(&merkleRoot[i * sizeof(uint32_t)]);
+	}
+	job.data[17] = LittleEndianUInt32Decode (&mNTime[0]);
+	job.data[18] = LittleEndianUInt32Decode (&mNBits[0]);
+	job.data[20] = 0x80000000;
+	job.data[31] = 0x00000280;
+
+	job.difficulty = mDifficulty;
+
+	//Set new job to workshop
+	mWorkshop.SetNewJob (job);
 }
 
 Stratum::Stratum (Statistic& statistic, Workshop& workshop, std::shared_ptr<Config> cfg) :
@@ -332,7 +391,6 @@ Stratum::Stratum (Statistic& statistic, Workshop& workshop, std::shared_ptr<Conf
 	mExtraNonce2Size (0),
 	mDifficulty (0),
 	mExtraNonce2Pos (0),
-	mMerkleCount (0),
 	mClean (false)
 {
 }

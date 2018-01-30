@@ -2,8 +2,9 @@
 
 struct Job {
 	std::vector<uint8_t> jobID;
+	std::vector<uint8_t> xNonce2;
 	std::vector<uint32_t> data; //[32];
-	std::vector<uint32_t> target; //[8];
+	double difficulty;
 
 	/**
 	* Create an empty benchmark job.
