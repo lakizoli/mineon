@@ -326,12 +326,11 @@ void Stratum::SubmitJobResults () {
 		LittleEndianUInt32Encode ((uint8_t*) &value, result.nonce);
 		std::string nonce = ToHexString ((const uint8_t*) &value, sizeof (uint32_t));
 
-		std::string jobID = ToHexString (&result.jobID[0], result.jobID.size ());
 		std::string xNonce2 = ToHexString (&result.xNonce2[0], result.xNonce2.size ());
 
 		std::shared_ptr<JSONArray> params = JSONArray::Create ();
 		params->Add (mConfig->GetUser ());
-		params->Add (jobID);
+		params->Add (result.jobID);
 		params->Add (xNonce2);
 		params->Add (nTime);
 		params->Add (nonce);
@@ -416,14 +415,14 @@ void Stratum::GenerateJob (JobInfo& jobInfo) {
 
 	job->difficulty = mDifficulty;
 
-	//Set new job to workshop
-	mWorkshop.AddNewJob (job);
-
 	//Call reset if needed
 	if (jobInfo.clean) {
 		mStatistic.Message ("Stratum: Server requested work restart!");
-		mWorkshop.ClearSubmittedJobResults ();
+		mWorkshop.RestartWork ();
 	}
+
+	//Set new job to workshop
+	mWorkshop.AddNewJob (job);
 }
 
 Stratum::Stratum (Statistic& statistic, Workshop& workshop, std::shared_ptr<Config> cfg) :
@@ -448,7 +447,7 @@ void Stratum::Step () {
 	}
 
 	//Submit all waiting job
-	//SubmitJobResults ();
+	SubmitJobResults ();
 
 	//Wait for server messages
 	std::shared_ptr<JSONObject> json = mCurlClient.ReceiveJson (120);

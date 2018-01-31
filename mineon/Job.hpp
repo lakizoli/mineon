@@ -13,7 +13,7 @@ struct Job {
 };
 
 struct JobResult {
-	std::vector<uint8_t> jobID;
+	std::string jobID; //Hex string
 	std::vector<uint8_t> xNonce2;
 	uint32_t nTime;
 	uint32_t nonce;

@@ -54,7 +54,7 @@ std::vector<JobResult> Workshop::GetJobResults () const {
 	return mSubmitJobs;
 }
 
-void Workshop::RemoveSubmittedJobResult (const std::vector<uint8_t>& jobID) {
+void Workshop::RemoveSubmittedJobResult (const std::string& jobID) {
 	std::unique_lock<std::shared_mutex> lock (mSync);
 
 	auto it = std::find_if (mSubmitJobs.begin (), mSubmitJobs.end (), [&jobID] (const JobResult& result) -> bool {
@@ -66,9 +66,10 @@ void Workshop::RemoveSubmittedJobResult (const std::vector<uint8_t>& jobID) {
 	}
 }
 
-void Workshop::ClearSubmittedJobResults () {
+void Workshop::RestartWork () {
 	std::unique_lock<std::shared_mutex> lock (mSync);
-	mSubmitJobs.clear ();
+
+	mJobs.clear ();
 
 	for (auto& it : mResetObservers) {
 		it.second ();

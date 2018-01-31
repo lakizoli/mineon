@@ -70,6 +70,7 @@ void CurlClient::AppendStringToDebugFile (const std::string& tag, const std::str
 		file.write (tag.c_str (), tag.size ());
 		file.write ("\n", 1);
 		file.write (str.c_str (), str.size ());
+		file.write ("\n", 1);
 	}
 }
 

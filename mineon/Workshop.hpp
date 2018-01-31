@@ -20,8 +20,9 @@ public:
 
 	void SubmitJobResult (const JobResult& result);
 	std::vector<JobResult> GetJobResults () const;
-	void RemoveSubmittedJobResult (const std::vector<uint8_t>& jobID);
-	void ClearSubmittedJobResults ();
+	void RemoveSubmittedJobResult (const std::string& jobID);
+
+	void RestartWork ();
 
 	uint32_t AddJobObserver (std::function<void (const std::string& jobID)> observer);
 	void RemoveJobObserver (uint32_t observerID);

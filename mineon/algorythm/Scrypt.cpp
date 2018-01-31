@@ -451,7 +451,7 @@ Algorythm::ScanResults Scrypt::Scan (uint32_t threadIndex, Statistic& statistic)
 	ScanResults result;
 	result.scanStart = std::chrono::system_clock::now ();
 
-	statistic.ScanStarted (threadIndex, result.scanStart, mNonce, mEndNonce);
+	statistic.ScanStarted (threadIndex, mJobID, result.scanStart, mNonce, mEndNonce);
 
 	do {
 		uint32_t initIndex = SCRYPT_THREAD_COUNT;
@@ -461,7 +461,7 @@ Algorythm::ScanResults Scrypt::Scan (uint32_t threadIndex, Statistic& statistic)
 
 		sp_scrypt_1024_1_1_256 (mData, mHash, *(const __m256i*) mMidState);
 
-		statistic.ScanStepEnded (threadIndex, mNonce);
+		statistic.ScanStepEnded (threadIndex, mJobID, mNonce);
 
 		initIndex = SCRYPT_THREAD_COUNT;
 		while (!result.foundNonce && initIndex--) {
@@ -476,7 +476,7 @@ Algorythm::ScanResults Scrypt::Scan (uint32_t threadIndex, Statistic& statistic)
 	result.hashesScanned = mNonce - mStartNonce;
 	result.scanDuration = std::chrono::system_clock::now () - result.scanStart;
 
-	statistic.ScanEnded (threadIndex, result.scanDuration, result.hashesScanned, result.foundNonce, result.nonce);
+	statistic.ScanEnded (threadIndex, mJobID, result.scanDuration, result.hashesScanned, result.foundNonce, result.nonce);
 
 	return result;
 }
