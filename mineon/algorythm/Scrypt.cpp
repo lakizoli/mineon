@@ -377,7 +377,46 @@ void Scrypt::DiffToTarget (double difficulty) {
 	}
 }
 
+void Scrypt::PreConditionScan (uint32_t threadIndex, Statistic& statistic) {
+	//Do the precondition scan
+	uint32_t distNonce = (mEndNonce - mStartNonce) / (SCRYPT_THREAD_COUNT + 1);
+
+	uint32_t initIndex = SCRYPT_THREAD_COUNT;
+	while (initIndex--) {
+		mData[initIndex * 20 + 19] = initIndex * distNonce;
+	}
+
+	sp_scrypt_1024_1_1_256 (mData, mHash, *(const __m256i*) mMidState);
+
+	//Calculate distances
+	std::vector<uint32_t> targetDistances (SCRYPT_THREAD_COUNT, 0xffffffffu);
+	initIndex = SCRYPT_THREAD_COUNT;
+	while (initIndex--) {
+		if (mHash[initIndex * 8 + 7] <= mTarget[7]) { //Possibly good result
+			targetDistances[initIndex] = 0;
+		} else { //Bad result
+			targetDistances[initIndex] = mHash[initIndex * 8 + 7] - mTarget[7];
+		}
+	}
+
+	//Choose optimal start nonce value (maximal distance)
+	uint32_t minIndex = 0;
+	uint32_t minDistance = 0xffffffffu;
+
+	initIndex = SCRYPT_THREAD_COUNT;
+	while (initIndex--) {
+		if (targetDistances[initIndex] < minDistance) {
+			minDistance = targetDistances[initIndex];
+			minIndex = initIndex;
+		}
+	}
+
+	//Set start nonce value
+	mNonce = minIndex * distNonce;
+}
+
 Scrypt::Scrypt () :
+	mState (States::Precondition),
 	mBreakScan (false),
 	mStartNonce (0),
 	mEndNonce (0),
@@ -425,6 +464,7 @@ bool Scrypt::Prepare (std::shared_ptr<Job> job, uint32_t nonceStart, uint32_t no
 	mBreakScan = false;
 
 	if (mJobID != job->jobID) { //New job arrived
+		mState = States::Precondition;
 		mJobID = job->jobID;
 		mStartNonce = nonceStart;
 		mEndNonce = nonceStart + nonceCount;
@@ -453,27 +493,37 @@ Algorythm::ScanResults Scrypt::Scan (uint32_t threadIndex, Statistic& statistic)
 
 	statistic.ScanStarted (threadIndex, mJobID, result.scanStart, mNonce, mEndNonce);
 
-	do {
-		uint32_t initIndex = SCRYPT_THREAD_COUNT;
-		while (initIndex--) {
-			mData[initIndex * 20 + 19] = mNonce++;
-		}
+	if (mState == States::Precondition) {
+		PreConditionScan (threadIndex, statistic);
+		mState = States::Scan;
+	}
 
-		sp_scrypt_1024_1_1_256 (mData, mHash, *(const __m256i*) mMidState);
-
-		statistic.ScanStepEnded (threadIndex, mJobID, mNonce);
-
-		initIndex = SCRYPT_THREAD_COUNT;
-		while (!result.foundNonce && initIndex--) {
-			if (mHash[initIndex * 8 + 7] <= mTarget[7] && FullTestHash (&mHash[initIndex * 8])) {
-				result.foundNonce = true;
-				result.nTime = mData[initIndex * 20 + 17];
-				result.nonce = mData[initIndex * 20 + 19];
+	int32_t nonceIncrement = 0;
+	if (!result.foundNonce) {
+		do {
+			uint32_t initIndex = SCRYPT_THREAD_COUNT;
+			while (initIndex--) {
+				++nonceIncrement;
+				mNonce += nonceIncrement % 2 == 0 ? -nonceIncrement : nonceIncrement;
+				mData[initIndex * 20 + 19] = mNonce;
 			}
-		}
-	} while (mNonce < mEndNonce && !result.foundNonce && !mBreakScan);
 
-	result.hashesScanned = mNonce - mStartNonce;
+			sp_scrypt_1024_1_1_256 (mData, mHash, *(const __m256i*) mMidState);
+
+			statistic.ScanStepEnded (threadIndex, mJobID, mNonce);
+
+			initIndex = SCRYPT_THREAD_COUNT;
+			while (!result.foundNonce && initIndex--) {
+				if (mHash[initIndex * 8 + 7] <= mTarget[7] && FullTestHash (&mHash[initIndex * 8])) {
+					result.foundNonce = true;
+					result.nTime = mData[initIndex * 20 + 17];
+					result.nonce = mData[initIndex * 20 + 19];
+				}
+			}
+		} while (mNonce < mEndNonce && !result.foundNonce && !mBreakScan);
+	}
+
+	result.hashesScanned = nonceIncrement; // mNonce - mStartNonce;
 	result.scanDuration = std::chrono::system_clock::now () - result.scanStart;
 
 	statistic.ScanEnded (threadIndex, mJobID, result.scanDuration, result.hashesScanned, result.foundNonce, result.nonce);

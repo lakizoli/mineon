@@ -5,6 +5,13 @@
 #define SCRYPT_THREAD_COUNT 8
 
 class Scrypt : public Algorythm {
+	enum class States {
+		Precondition,
+		Scan
+	};
+
+private:
+	States mState;
 	std::atomic_bool mBreakScan;
 
 	std::string mJobID; ///< The id of the current job.
@@ -19,6 +26,8 @@ class Scrypt : public Algorythm {
 
 	bool FullTestHash (const uint32_t hash[8]) const;
 	void DiffToTarget (double diff);
+
+	void PreConditionScan (uint32_t threadIndex, Statistic& statistic);
 
 public:
 	Scrypt ();

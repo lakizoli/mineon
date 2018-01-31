@@ -18,9 +18,13 @@ void Statistic::ScanStepEnded (uint32_t threadIndex, const std::string& jobID, u
 	//TODO: ...
 
 	static uint32_t cnt = 0;
-
 	++cnt;
+
+#ifdef _DEBUG
+	if (cnt % 100 == 0) {
+#else //_DEBUG
 	if (cnt % 1000 == 0) {
+#endif //_DEBUG
 		std::cout << "Thread " << threadIndex << " (" << jobID << "): step ended -> nonce: " << nonce << "       \r";
 	}
 }

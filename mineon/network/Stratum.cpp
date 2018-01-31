@@ -341,10 +341,12 @@ void Stratum::SubmitJobResults () {
 
 		//Handle response
 		succeeded = resp->HasBool ("result") && resp->GetBool ("result");
+		mWorkshop.RemoveSubmittedJobResult (result.jobID);
+
 		if (succeeded) {
-			mWorkshop.RemoveSubmittedJobResult (result.jobID);
+			mStatistic.Message ("Stratum: work submitted! jobID: " + result.jobID + " (Yay!!!!)");
 		} else { //Failed or rejected
-			mStatistic.Error ("Stratum: submitted work rejected!");
+			mStatistic.Error ("Stratum: submitted work rejected! jobID: " + result.jobID + " (Boooooo!)");
 
 			if (resp->HasObject ("error") && !resp->GetObj ("error")->IsEmpty ()) {
 				mStatistic.Error ("Stratum: reject error -> '" + resp->GetObj ("error")->ToString () + "'");
