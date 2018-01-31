@@ -4,6 +4,8 @@
 #include <Winsock2.h>
 #include <Mstcpip.h>
 
+#define COMMUNICATION_DEBUG
+
 int32_t CurlClient::SockOptKeepaliveCallback (void* userdata, curl_socket_t fd, curlsocktype purpose) {
 	int32_t keepalive = 1;
 	int32_t tcp_keepcnt = 3;
@@ -61,7 +63,21 @@ bool CurlClient::SocketFull (curl_socket_t socket, int32_t timeout) {
 	return select (socket + 1, &rd, nullptr, nullptr, &tv) > 0;
 }
 
+void CurlClient::AppendStringToDebugFile (const std::string& tag, const std::string& str) {
+	std::fstream file ("d:\\work\\messages.dump", std::ios::out | std::ios::binary | std::ios::app);
+	if (file) {
+		file.write ("====================\n", 21);
+		file.write (tag.c_str (), tag.size ());
+		file.write ("\n", 1);
+		file.write (str.c_str (), str.size ());
+	}
+}
+
 bool CurlClient::SendLine (CURL* curl, curl_socket_t socket, std::string str) {
+#ifdef COMMUNICATION_DEBUG
+	AppendStringToDebugFile ("request", str);
+#endif //COMMUNICATION_DEBUG
+
 	size_t len = str.size ();
 	size_t sent = 0;
 
@@ -92,11 +108,11 @@ bool CurlClient::SendLine (CURL* curl, curl_socket_t socket, std::string str) {
 	return true;
 }
 
-std::string CurlClient::ReceiveLine (CURL* curl, curl_socket_t socket, std::vector<uint8_t>& buffer) {
+std::string CurlClient::ReceiveLine (CURL* curl, curl_socket_t socket, std::vector<uint8_t>& buffer, int32_t timeout) {
 	auto it = std::find (buffer.begin (), buffer.end (), '\n');
 	if (it == buffer.end ()) {
 		const std::chrono::system_clock::time_point rstart = std::chrono::system_clock::now ();
-		if (!SocketFull (socket, 60)) {
+		if (!SocketFull (socket, timeout)) {
 			//applog(LOG_ERR, "stratum_recv_line timed out");
 			return std::string ();
 		}
@@ -132,6 +148,11 @@ std::string CurlClient::ReceiveLine (CURL* curl, curl_socket_t socket, std::vect
 
 	std::string res (buffer.begin (), it);
 	buffer.erase (buffer.begin (), ++it); //++it for erase the newline char from end also!
+
+#ifdef COMMUNICATION_DEBUG
+	AppendStringToDebugFile ("response", res);
+#endif //COMMUNICATION_DEBUG
+
 	return res;
 }
 
@@ -208,12 +229,8 @@ std::shared_ptr<JSONObject> CurlClient::CallJsonRPC (std::shared_ptr<JSONObject>
 	return ReceiveJson ();
 }
 
-bool CurlClient::WaitNextMessage (uint32_t timeout) {
-	return SocketFull (mSocket, 120);
-}
-
-std::shared_ptr<JSONObject> CurlClient::ReceiveJson () {
-	std::string rline = ReceiveLine (mCurl, mSocket, mSocketBuffer);
+std::shared_ptr<JSONObject> CurlClient::ReceiveJson (int32_t timeout) {
+	std::string rline = ReceiveLine (mCurl, mSocket, mSocketBuffer, timeout);
 	if (rline.empty ()) {
 		return nullptr;
 	}

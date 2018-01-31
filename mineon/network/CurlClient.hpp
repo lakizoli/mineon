@@ -14,8 +14,9 @@ class CurlClient {
 	static int32_t SockOptKeepaliveCallback (void* userdata, curl_socket_t fd, curlsocktype purpose);
 	static curl_socket_t OpenSocketGrabCallback (void* clientp, curlsocktype purpose, struct curl_sockaddr *addr);
 	static bool SocketFull (curl_socket_t socket, int32_t timeout);
+	static void AppendStringToDebugFile (const std::string& tag, const std::string& str);
 	static bool SendLine (CURL* curl, curl_socket_t socket, std::string str);
-	static std::string ReceiveLine (CURL* curl, curl_socket_t socket, std::vector<uint8_t>& buffer);
+	static std::string ReceiveLine (CURL* curl, curl_socket_t socket, std::vector<uint8_t>& buffer, int32_t timeout = 60);
 
 public:
 	explicit CurlClient (Statistic& statistic);
@@ -27,7 +28,6 @@ public:
 	}
 
 	std::shared_ptr<JSONObject> CallJsonRPC (std::shared_ptr<JSONObject> req);
-	bool WaitNextMessage (uint32_t timeout);
-	std::shared_ptr<JSONObject> ReceiveJson ();
+	std::shared_ptr<JSONObject> ReceiveJson (int32_t timeout = 60);
 	bool SendJson (std::shared_ptr<JSONObject> json) const;
 };

@@ -417,20 +417,24 @@ void Scrypt::operator delete [] (void* ptr, std::size_t size) {
 	_aligned_free(ptr);
 }
 
-bool Scrypt::Prepare (const Job& job, uint32_t nonceStart, uint32_t nonceCount) {
+bool Scrypt::Prepare (std::shared_ptr<Job> job, uint32_t nonceStart, uint32_t nonceCount) {
+	if (job == nullptr) {
+		return false;
+	}
+
 	mBreakScan = false;
 
-	if (mJobID != job.jobID) { //New job arrived
-		mJobID = job.jobID;
+	if (mJobID != job->jobID) { //New job arrived
+		mJobID = job->jobID;
 		mStartNonce = nonceStart;
 		mEndNonce = nonceStart + nonceCount;
 		mNonce = mStartNonce;
 
-		DiffToTarget (job.difficulty);
+		DiffToTarget (job->difficulty);
 
 		uint32_t initIndex = SCRYPT_THREAD_COUNT;
 		while (initIndex--) {
-			memcpy (mData + initIndex * 20, &job.data[0], 20 * sizeof (uint32_t));
+			memcpy (mData + initIndex * 20, &job->data[0], 20 * sizeof (uint32_t));
 		}
 
 		__m256i* midState = (__m256i*) mMidState;

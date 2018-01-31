@@ -7,7 +7,7 @@
 class Scrypt : public Algorythm {
 	std::atomic_bool mBreakScan;
 
-	std::vector<uint8_t> mJobID; ///< The id of the current job.
+	std::string mJobID; ///< The id of the current job.
 	uint32_t mStartNonce; ///< The start of the nonce range to scan.
 	uint32_t mEndNonce; ///< The end of the nonce range to scan (exclusive).
 	uint32_t mNonce; ///< The next available nonce value to test
@@ -32,7 +32,7 @@ public:
 	std::string GetAlgorythmID () const override { return "scrypt"; }
 	std::string GetDescription () const override { return "scrypt(1024, 1, 1)"; }
 
-	bool Prepare (const Job& job, uint32_t nonceStart, uint32_t nonceCount) override;
+	bool Prepare (std::shared_ptr<Job> job, uint32_t nonceStart, uint32_t nonceCount) override;
 	ScanResults Scan (uint32_t threadIndex, Statistic& statistic) override;
 	void BreakScan () override;
 };

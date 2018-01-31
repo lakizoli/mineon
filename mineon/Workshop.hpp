@@ -6,18 +6,17 @@ class Workshop {
 	static uint32_t mNextObserverID;
 
 	mutable std::shared_mutex mSync;
-	bool mHasJob;
-	Job mJob;
+	std::map<std::string, std::shared_ptr<Job>> mJobs;
 	std::map<uint32_t, std::function<void (const std::string& jobID)>> mJobObservers;
+	std::map<uint32_t, std::function<void ()>> mResetObservers;
 
 	std::vector<JobResult> mSubmitJobs;
 
 public:
 	Workshop ();
 
-	void SetNewJob (const Job& job);
-	Job GetCurrentJob () const;
-	bool HasJob () const;
+	void AddNewJob (std::shared_ptr<Job> job);
+	std::shared_ptr<Job> PopNextJob ();
 
 	void SubmitJobResult (const JobResult& result);
 	std::vector<JobResult> GetJobResults () const;
@@ -26,4 +25,7 @@ public:
 
 	uint32_t AddJobObserver (std::function<void (const std::string& jobID)> observer);
 	void RemoveJobObserver (uint32_t observerID);
+
+	uint32_t AddResetObserver (std::function<void ()> observer);
+	void RemoveResetObserver (uint32_t observerID);
 };

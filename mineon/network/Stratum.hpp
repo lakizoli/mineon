@@ -4,28 +4,33 @@
 #include "CurlClient.hpp"
 
 class Stratum : public Network {
+	struct JobInfo {
+		std::string jobID;
+		std::vector<uint8_t> prevHash; //[32]
+		std::vector<uint8_t> coinBase;
+		uint32_t extraNonce2Pos;
+
+		std::vector<std::vector<uint8_t>> merkleTree;
+
+		std::vector<uint8_t> version; //[4]
+		std::vector<uint8_t> nBits; //[4]
+		std::vector<uint8_t> nTime; //[4]
+		bool clean;
+
+		JobInfo () : extraNonce2Pos (0), clean (false) {}
+	};
+
+private:
 	std::string mUrl;
 	CurlClient mCurlClient;
 
-	//Stratum connection and job parameters
+	//Stratum connection parameters
 	std::string mSessionID;
 	std::vector<uint8_t> mExtraNonce;
 	uint32_t mExtraNonce2Size;
-
 	double mDifficulty;
-
-	std::vector<uint8_t> mJobID;
-	std::vector<uint8_t> mPrevHash; //[32]
-	std::vector<uint8_t> mCoinBase;
-	uint32_t mExtraNonce2Pos;
-
-	std::vector<std::vector<uint8_t>> mMerkleTree;
-
-	std::vector<uint8_t> mVersion; //[4]
-	std::vector<uint8_t> mNBits; //[4]
-	std::vector<uint8_t> mNTime; //[4]
-	bool mClean;
-
+	
+private:
 	bool Connect (const std::string& url);
 	void Disconnect ();
 
@@ -41,8 +46,7 @@ class Stratum : public Network {
 	static void LittleEndianUInt32Encode (uint8_t dest[4], uint32_t value);
 	static uint32_t LittleEndianUInt32Decode (const uint8_t value[4]);
 	static uint32_t BigEndianUInt32Decode (const uint8_t value[4]);
-	static void DiffToTarget (double diff, std::vector<uint32_t>& target);
-	void GenerateJob ();
+	void GenerateJob (JobInfo& jobInfo);
 
 public:
 	explicit Stratum (Statistic& statistic, Workshop& workshop, std::shared_ptr<Config> cfg);

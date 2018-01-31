@@ -45,7 +45,7 @@ public:
 	/**
 	* Prepare the algorithm calculation for the given nonce range.
 	*/
-	virtual bool Prepare (const Job& job, uint32_t nonceStart, uint32_t nonceCount) = 0;
+	virtual bool Prepare (std::shared_ptr<Job> job, uint32_t nonceStart, uint32_t nonceCount) = 0;
 
 	/**
 	* Scan for the nonce in the prepared nonce range.

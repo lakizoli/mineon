@@ -36,20 +36,7 @@ bool Stratum::Subscribe () {
 		mSessionID.clear ();
 		mExtraNonce.clear ();
 		mExtraNonce2Size = 0;
-
 		mDifficulty = 0.0;
-
-		mJobID.clear ();
-		mPrevHash.clear ();
-		mCoinBase.clear ();
-		mExtraNonce2Pos = 0;
-
-		mMerkleTree.clear ();
-
-		mVersion.clear ();
-		mNBits.clear ();
-		mNTime.clear ();
-		mClean = false;
 
 		//Compose request
 		std::shared_ptr<JSONObject> req = JSONObject::Create ();
@@ -218,22 +205,11 @@ bool Stratum::HandleMethod (std::shared_ptr<JSONObject> json) {
 }
 
 bool Stratum::HandleNotify (std::shared_ptr<JSONArray> notifyParams) {
-	//Clear stratum values
-	mJobID.clear ();
-	mPrevHash.clear ();
-	mCoinBase.clear ();
-	mExtraNonce2Pos = 0;
-
-	mMerkleTree.clear ();
-
-	mVersion.clear ();
-	mNBits.clear ();
-	mNTime.clear ();
-	mClean = false;
+	JobInfo jobInfo;
 
 	//Parse parameters
-	std::string jobID = notifyParams->GetStringAtIndex (0);
-	if (jobID.empty ()) {
+	jobInfo.jobID = notifyParams->GetStringAtIndex (0);
+	if (jobInfo.jobID.empty ()) {
 		return false;
 	}
 
@@ -276,12 +252,7 @@ bool Stratum::HandleNotify (std::shared_ptr<JSONArray> notifyParams) {
 		return false;
 	}
 
-	mClean = notifyParams->GetBoolAtIndex (8);
-
-	//Convert job id
-	for (size_t i = 0, iEnd = jobID.length (); i < iEnd; i += 2) {
-		mJobID.push_back ((uint8_t) stoul (jobID.substr (i, 2), 0, 16));
-	}
+	jobInfo.clean = notifyParams->GetBoolAtIndex (8);
 
 	//Convert merkle tree
 	for (uint32_t i = 0, iEnd = merkleArray->GetCount (); i < iEnd; ++i) {
@@ -295,42 +266,44 @@ bool Stratum::HandleNotify (std::shared_ptr<JSONArray> notifyParams) {
 			merkleItem.push_back ((uint8_t) stoul (merkleItemValue.substr (j, 2), 0, 16));
 		}
 
-		mMerkleTree.push_back (merkleItem);
+		jobInfo.merkleTree.push_back (merkleItem);
 	}
 
 	//Compose coinbase -> [coinbase1] + [xnonce1] + [xnonce2] + [coinbase2]
-	mExtraNonce2Pos = (uint32_t) (coinBase1.length () / 2 + mExtraNonce.size ());
+	jobInfo.extraNonce2Pos = (uint32_t) (coinBase1.length () / 2 + mExtraNonce.size ());
 	for (size_t i = 0, iEnd = coinBase1.length (); i < iEnd; i += 2) {
-		mCoinBase.push_back ((uint8_t) stoul (coinBase1.substr (i, 2), 0, 16));
+		jobInfo.coinBase.push_back ((uint8_t) stoul (coinBase1.substr (i, 2), 0, 16));
 	}
-	std::copy (mExtraNonce.begin (), mExtraNonce.end (), std::back_inserter (mCoinBase));
+	std::copy (mExtraNonce.begin (), mExtraNonce.end (), std::back_inserter (jobInfo.coinBase));
 	for (size_t i = 0; i < mExtraNonce2Size; ++i) {
-		mCoinBase.push_back (0);
+		jobInfo.coinBase.push_back (0);
 	}
 	for (size_t i = 0, iEnd = coinBase2.length (); i < iEnd; i += 2) {
-		mCoinBase.push_back ((uint8_t) stoul (coinBase2.substr (i, 2), 0, 16));
+		jobInfo.coinBase.push_back ((uint8_t) stoul (coinBase2.substr (i, 2), 0, 16));
 	}
 
 	//Convert prevHash
 	for (size_t i = 0, iEnd = prevHash.length (); i < iEnd; i += 2) {
-		mPrevHash.push_back ((uint8_t) stoul (prevHash.substr (i, 2), 0, 16));
+		jobInfo.prevHash.push_back ((uint8_t) stoul (prevHash.substr (i, 2), 0, 16));
 	}
 
 	//Convert version
 	for (size_t i = 0, iEnd = version.length (); i < iEnd; i += 2) {
-		mVersion.push_back ((uint8_t) stoul (version.substr (i, 2), 0, 16));
+		jobInfo.version.push_back ((uint8_t) stoul (version.substr (i, 2), 0, 16));
 	}
 
 	//Convert nbits
 	for (size_t i = 0, iEnd = nbits.length (); i < iEnd; i += 2) {
-		mNBits.push_back ((uint8_t) stoul (nbits.substr (i, 2), 0, 16));
+		jobInfo.nBits.push_back ((uint8_t) stoul (nbits.substr (i, 2), 0, 16));
 	}
 
 	//Convert ntime
 	for (size_t i = 0, iEnd = ntime.length (); i < iEnd; i += 2) {
-		mNTime.push_back ((uint8_t) stoul (ntime.substr (i, 2), 0, 16));
+		jobInfo.nTime.push_back ((uint8_t) stoul (ntime.substr (i, 2), 0, 16));
 	}
 
+	//Generate job
+	GenerateJob (jobInfo);
 	return true;
 }
 
@@ -406,34 +379,19 @@ uint32_t Stratum::BigEndianUInt32Decode (const uint8_t value[4]) {
 	return ((uint32_t) (value[3]) + ((uint32_t) (value[2]) << 8) + ((uint32_t) (value[1]) << 16) + ((uint32_t) (value[0]) << 24));
 }
 
-void Stratum::DiffToTarget (double diff, std::vector<uint32_t>& target) {
-	int32_t k = 0;
-	for (k = 6; k > 0 && diff > 1.0; k--) {
-		diff /= 4294967296.0;
-	}
-	uint64_t m = 4294901760.0 / diff;
-	if (m == 0 && k == 6) {
-		memset (&target[0], 0xff, 8 * sizeof (uint32_t));
-	} else {
-		memset (&target[0], 0, 8 * sizeof (uint32_t));
-		target[k] = (uint32_t) m;
-		target[k + 1] = (uint32_t) (m >> 32);
-	}
-}
-
-void Stratum::GenerateJob () {
+void Stratum::GenerateJob (JobInfo& jobInfo) {
 	//Init new job
-	Job job;
-	job.jobID = mJobID;
+	std::shared_ptr<Job> job (std::make_shared<Job> ());
+	job->jobID = jobInfo.jobID;
 
-	uint8_t* xNonce2Ptr = &mCoinBase[mExtraNonce2Pos];
-	job.xNonce2.assign (xNonce2Ptr, xNonce2Ptr + mExtraNonce2Size);
+	uint8_t* xNonce2Ptr = &jobInfo.coinBase[jobInfo.extraNonce2Pos];
+	job->xNonce2.assign (xNonce2Ptr, xNonce2Ptr + mExtraNonce2Size);
 
 	//Generate merkle root
 	std::vector<uint8_t> merkleRoot (64);
-	Sha2Utils::Sha256d (&merkleRoot[0], &mCoinBase[0], (int32_t) mCoinBase.size ());
-	for (size_t i = 0; i < mMerkleTree.size (); i++) {
-		const std::vector<uint8_t>& merkleTreeItem = mMerkleTree[i];
+	Sha2Utils::Sha256d (&merkleRoot[0], &jobInfo.coinBase[0], (int32_t) jobInfo.coinBase.size ());
+	for (size_t i = 0; i < jobInfo.merkleTree.size (); i++) {
+		const std::vector<uint8_t>& merkleTreeItem = jobInfo.merkleTree[i];
 		memcpy (&merkleRoot[0] + 32, &merkleTreeItem[0], 32);
 		Sha2Utils::Sha256d (&merkleRoot[0], &merkleRoot[0], 64);
 	}
@@ -444,31 +402,35 @@ void Stratum::GenerateJob () {
 	}
 
 	//Assemble block header
-	job.data[0] = LittleEndianUInt32Decode (&mVersion[0]);
+	job->data[0] = LittleEndianUInt32Decode (&jobInfo.version[0]);
 	for (uint32_t i = 0; i < 8; i++) {
-		job.data[1 + i] = LittleEndianUInt32Decode (&mPrevHash[i * sizeof (uint32_t)]);
+		job->data[1 + i] = LittleEndianUInt32Decode (&jobInfo.prevHash[i * sizeof (uint32_t)]);
 	}
 	for (uint32_t i = 0; i < 8; i++) {
-		job.data[9 + i] = BigEndianUInt32Decode(&merkleRoot[i * sizeof(uint32_t)]);
+		job->data[9 + i] = BigEndianUInt32Decode(&merkleRoot[i * sizeof(uint32_t)]);
 	}
-	job.data[17] = LittleEndianUInt32Decode (&mNTime[0]);
-	job.data[18] = LittleEndianUInt32Decode (&mNBits[0]);
-	job.data[20] = 0x80000000;
-	job.data[31] = 0x00000280;
+	job->data[17] = LittleEndianUInt32Decode (&jobInfo.nTime[0]);
+	job->data[18] = LittleEndianUInt32Decode (&jobInfo.nBits[0]);
+	job->data[20] = 0x80000000;
+	job->data[31] = 0x00000280;
 
-	job.difficulty = mDifficulty;
+	job->difficulty = mDifficulty;
 
 	//Set new job to workshop
-	mWorkshop.SetNewJob (job);
+	mWorkshop.AddNewJob (job);
+
+	//Call reset if needed
+	if (jobInfo.clean) {
+		mStatistic.Message ("Stratum: Server requested work restart!");
+		mWorkshop.ClearSubmittedJobResults ();
+	}
 }
 
 Stratum::Stratum (Statistic& statistic, Workshop& workshop, std::shared_ptr<Config> cfg) :
 	Network (statistic, workshop, cfg),
 	mCurlClient (statistic),
 	mExtraNonce2Size (0),
-	mDifficulty (0),
-	mExtraNonce2Pos (0),
-	mClean (false)
+	mDifficulty (0)
 {
 }
 
@@ -485,36 +447,20 @@ void Stratum::Step () {
 		}
 	}
 
-	//Set the new job if any
-	bool newJobArrived = true;
-	if (mWorkshop.HasJob ()) {
-		Job job = mWorkshop.GetCurrentJob ();
-		newJobArrived = job.jobID != mJobID;
-	}
-
-	if (newJobArrived) {
-		GenerateJob ();
-
-		if (mClean) {
-			mStatistic.Message ("Stratum: Server requested work restart!");
-			mWorkshop.ClearSubmittedJobResults ();
-		}
-	}
-
 	//Submit all waiting job
-	SubmitJobResults ();
+	//SubmitJobResults ();
 
 	//Wait for server messages
-	if (!mCurlClient.WaitNextMessage (120)) {
+	std::shared_ptr<JSONObject> json = mCurlClient.ReceiveJson (120);
+	if (json == nullptr) {
 		Disconnect ();
 		mStatistic.Message ("Stratum: Connection timed out and interrupted!");
 		return;
 	}
 
-	std::shared_ptr<JSONObject> json = mCurlClient.ReceiveJson ();
-
-	//Handle response
-	if (json && HandleMethod (json)) {
-		//json = mCurlClient.ReceiveJson ();
+	if (json && !HandleMethod (json)) {
+		Disconnect ();
+		mStatistic.Message ("Stratum: Unhandled method arrived, connection interrupted!");
+		return;
 	}
 }
