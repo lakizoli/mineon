@@ -31,6 +31,8 @@ private:
 	double mDifficulty;
 	
 private:
+	void RunTest ();
+
 	bool Connect (const std::string& url);
 	void Disconnect ();
 

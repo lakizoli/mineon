@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "Statistic.hpp"
 
-Statistic::Statistic () {
+Statistic::Statistic () :
+	mSubmittedCount (0)
+{
 }
 
 void Statistic::NewJobArrived (const std::string& jobID) {
@@ -39,6 +41,11 @@ void Statistic::ScanEnded (uint32_t threadIndex, const std::string& jobID, std::
 		" kH/sec, hash count: " << hashesScanned <<
 		", found: " << (foundNonce ? "true" : "false") <<
 		", nonce: " << nonce << ")" << std::endl;
+
+	if (foundNonce) {
+		++mSubmittedCount;
+		std::cout << "Submitted work count: " << mSubmittedCount;
+	}
 }
 
 void Statistic::Error (const std::string& error) {

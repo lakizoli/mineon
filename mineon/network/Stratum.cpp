@@ -4,6 +4,36 @@
 #include "CurlClient.hpp"
 #include "Sha2Utils.hpp"
 
+#define RUN_STRATUM_TEST
+
+void Stratum::RunTest () {
+	// Test communication with succeeded result:
+	//
+	//request:	{"id":1,"method":"mining.subscribe","params":["mineon 1.0.0"]}
+	//response:	{"error": null, "id": 1, "result": [["mining.notify", "ae6812eb4cd7735a302a8a9dd95cf71f"], "f8006343", 4]}
+	//
+	//request:	{"id":2,"method":"mining.authorize","params":["lzgm.2","x"]}
+	//response:	{"params": [2048.0], "id": null, "method": "mining.set_difficulty"}
+	//
+	//notify:	{"params": ["4dcd", "5ee7062d191ee0f3bbbea2babae090b05f8c9530948397caa5402784760a8859", "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff530310041d062f503253482f047b66725a08", "392f7374726174756d506f6f6c2ffabe6d6db90d513dd69e5fe6fb72f48a813ba3eb6d8d2fc34fb21761390dc21d1d75e61310000000000000000000000001807c814a000000001976a9146fc22a4a9b1e7d83ce8c40d94648105b9b50c02b88ac00000000", [], "00000002", "1b01784b", "5a72667b", true], "id": null, "method": "mining.notify"}
+	//result:	{"id":4,"method":"mining.submit","params":["lzgm.2","4dcd","00000000","5a72667b","2bbb1bc7"]}
+
+	//subscribe
+	mSessionID = "ae6812eb4cd7735a302a8a9dd95cf71f";
+	mExtraNonce = { 0xf8, 0x00, 0x63, 0x43 };
+	mExtraNonce2Size = 4;
+
+	//set_difficulty
+	mDifficulty = 2048.0;
+
+	//notify
+	std::string notify = "{\"params\": [\"4dcd\", \"5ee7062d191ee0f3bbbea2babae090b05f8c9530948397caa5402784760a8859\", \"01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff530310041d062f503253482f047b66725a08\", \"392f7374726174756d506f6f6c2ffabe6d6db90d513dd69e5fe6fb72f48a813ba3eb6d8d2fc34fb21761390dc21d1d75e61310000000000000000000000001807c814a000000001976a9146fc22a4a9b1e7d83ce8c40d94648105b9b50c02b88ac00000000\", [], \"00000002\", \"1b01784b\", \"5a72667b\", true], \"id\": null, \"method\": \"mining.notify\"}";
+	std::shared_ptr<JSONObject> json = JSONObject::Parse (notify);
+	HandleMethod (json);
+
+	std::this_thread::sleep_for (std::chrono::seconds (3600));
+}
+
 bool Stratum::Connect (const std::string& url) {
 	//Comose stratum url
 	size_t posSeparator = url.find (':');
@@ -436,6 +466,9 @@ Stratum::Stratum (Statistic& statistic, Workshop& workshop, std::shared_ptr<Conf
 }
 
 void Stratum::Step () {
+#ifdef RUN_STRATUM_TEST
+	RunTest ();
+#else //RUN_STRATUM_TEST
 	//Connect to the stratum server
 	while (!mCurlClient.IsConnected ()) {
 		if (!Connect (mConfig->GetUrl ()) || !Subscribe () || !Authorize ()) {
@@ -464,4 +497,5 @@ void Stratum::Step () {
 		mStatistic.Message ("Stratum: Unhandled method arrived, connection interrupted!");
 		return;
 	}
+#endif //RUN_STRATUM_TEST
 }

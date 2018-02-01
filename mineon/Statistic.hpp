@@ -1,6 +1,8 @@
 #pragma once
 
 class Statistic {
+	uint32_t mSubmittedCount;
+
 public:
 	Statistic ();
 
